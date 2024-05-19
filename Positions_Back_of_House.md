@@ -1,2 +1,0 @@
-Dishwasher
-Kitchen Assistant

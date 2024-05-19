@@ -206,9 +206,15 @@ def _setup_tipping_pools(_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _tip_amounts(ukey):
+    totalPool = st.number_input('Total Tipping Pool ($)', value=0.00, format='%f', key=ukey+'1')
+    col40, col41, col42 = st.columns([1,1,1])
+    chefPercent = col40.number_input('Chef Percentage (%)', value=18, format='%f', key=ukey+'2')
+    chefCount = col41.number_input('# Chefs', value=4, format='%f', key=ukey+'3')
+    chefCut = round((totalPool*(chefPercent/100))/chefCount,2)*chefCount
+    chefCut_ind = col42.number_input('Each Chef's tip total ($), value=chefCut/chefCount'format='%f', key=ukey+'3', disabled=True)
     col40, col41 = st.columns([1,1])
-    tippingPool_Garden = col40.number_input('Garden Pool ($)', value=0.00, format='%f', key=ukey+'1')
-    tippingPool_Reg = col41.number_input('Regular Pool ($)', value=0.00, format='%f', key=ukey+'2')
+    tippingPool_Garden = col40.number_input('Garden Pool ($)', value=0.00, format='%f', key=ukey+'3')
+    tippingPool_Reg = col41.number_input('Regular Pool ($)', value=(totalPool-chefCut-tippingPool_Garden), format='%f', key=ukey+'4', disabled=True)
     return tippingPool_Garden, tippingPool_Reg
 
 
@@ -256,18 +262,18 @@ def _tip_info(house, pool, split, _df_hrs):
 
 
 def _display_tips(_df_tips):
-    col1, col2 = st.columns([3,2])
-    col1.caption('Grouped by Position')
+    #col1, col2 = st.columns([3,2])
+    st.caption('Grouped by Position')
     _df_tips_pos = _format_aggregate(_aggregate_name_position(_df_tips))
     col1.dataframe(_df_tips_pos, column_config={
         'Full Name': st.column_config.TextColumn(width='medium'),
         'Position': st.column_config.TextColumn(width='medium')
     })
-    col2.caption('Payroll')
-    _df_tips_f = _format_aggregate(_aggregate_name(_df_tips))
-    col2.dataframe(_df_tips_f, column_config={
-        'Full Name': st.column_config.TextColumn(width='medium')
-    })
+    #st.caption('Payroll')
+    #_df_tips_f = _format_aggregate(_aggregate_name(_df_tips))
+    #col2.dataframe(_df_tips_f, column_config={
+    #    'Full Name': st.column_config.TextColumn(width='medium')
+    #})
 
 
 def _confirm_tip_total(_df_tips, tippingPool_Garden, tippingPool_Reg):

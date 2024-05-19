@@ -211,7 +211,7 @@ def _tip_amounts(ukey):
     chefPercent = col40.number_input('Chef Percentage (%)', value=18, format='%f', key=ukey+'2')
     chefCount = col41.number_input('# Chefs', value=4, format='%f', key=ukey+'3')
     chefCut = round((totalPool*(chefPercent/100))/chefCount,2)*chefCount
-    chefCut_ind = col42.number_input('Each Chefs tip total ($)', value=chefCut/chefCount'format='%f', key=ukey+'3', disabled=True)
+    chefCut_ind = col42.number_input('Each Chefs tip total ($)', value=chefCut/chefCount, format='%f', key=ukey+'3', disabled=True)
     col40, col41 = st.columns([1,1])
     tippingPool_Garden = col40.number_input('Garden Pool ($)', value=0.00, format='%f', key=ukey+'3')
     tippingPool_Reg = col41.number_input('Regular Pool ($)', value=(totalPool-chefCut-tippingPool_Garden), format='%f', key=ukey+'4', disabled=True)

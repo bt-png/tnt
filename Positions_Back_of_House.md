@@ -1,3 +1,2 @@
-Sous Chef
-Prep Cook
 Dishwasher
+Kitchen Assistant

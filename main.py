@@ -13,12 +13,6 @@ def run():
         if val is not None:
             st.markdown('---')
             df_tips, df_tips_adjusted = _process.run(val)
-            with st.expander(label='Final Data', expanded=False):
-                st.caption('Default Positions')
-                st.dataframe(df_tips)
-                st.markdown('---')
-                st.caption('Revised Positions')
-                st.dataframe(df_tips_adjusted)
 
 if __name__ == '__main__':
     run()

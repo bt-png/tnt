@@ -23,31 +23,20 @@ def _combine_FullName(_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def payroll_summary(_df):
-    keys = list(_all_positions().keys())
-    df = _df.copy()
-    df['Hours'] = df['Regular']
-    df['Wage'] = df['Paid Total']
-    df['Tip'] = df['Hours'] * df['Tip Rate']
-    df['Wage + Tip'] = df['Wage'] + df['Tip']
-    df['Garden Tips'] = [df[(df['Full Name'] == x) & (df['Tip Pool'].isin([keys[0], keys[1], keys[2]]))]['Tip'].sum() for x in df['Full Name']]
-    df['Regular Tips'] = [df[(df['Full Name'] == x) & (df['Tip Pool'].isin([keys[3], keys[4]]))]['Tip'].sum() for x in df['Full Name']]
-    df_agg = df.groupby(['Full Name', 'Garden Tips', 'Regular Tips']).agg({
-        'Hours': sum,
-        'Wage': sum,
-        'Wage + Tip': sum
-        })
-    st.dataframe(df_agg, hide_index=False, height=650, column_config={
-        'Full Name': st.column_config.TextColumn(width='medium'),
-        'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
-        'Regular Tips': st.column_config.NumberColumn(format='$ %.2f'),
-        'Hours': st.column_config.NumberColumn(width='small', format='%.2f'),
-        'Wage': st.column_config.NumberColumn(width='small', format='$ %.2f'),
-        'Wage + Tip': st.column_config.NumberColumn(width='small', format='$ %.2f')
-    })
+    df = _add_payroll_summary(_df)
+    df_agg = _payroll_group_by_tips(df)
+    display_payroll_summary(df_agg)
     return df
 
 
 def position_summary(_df):
+    df = _add_payroll_summary(_df)
+    df_agg = _payroll_group_by_pos(df)
+    display_position_summary(df_agg)
+    return df
+
+
+def _add_payroll_summary(_df):
     keys = list(_all_positions().keys())
     df = _df.copy()
     df['Hours'] = df['Regular']
@@ -56,21 +45,62 @@ def position_summary(_df):
     df['Wage + Tip'] = df['Wage'] + df['Tip']
     df['Garden Tips'] = [df[(df['Full Name'] == x) & (df['Tip Pool'].isin([keys[0], keys[1], keys[2]]))]['Tip'].sum() for x in df['Full Name']]
     df['Regular Tips'] = [df[(df['Full Name'] == x) & (df['Tip Pool'].isin([keys[3], keys[4]]))]['Tip'].sum() for x in df['Full Name']]
-    df_agg = df.groupby(['Full Name', 'Position']).agg({
+    return df
+
+def _payroll_group_by_tips(_df):
+    df_agg = _df.groupby(['Full Name', 'Garden Tips', 'Regular Tips']).agg({
+        'Hours': sum,
+        'Wage': sum,
+        'Wage + Tip': sum
+        })
+    df_agg = df_agg.reset_index()
+    #df_agg = df_agg.drop(['index'], axis=1)
+    return df_agg
+
+def _payroll_group_by_pos(_df):
+    df_agg = _df.groupby(['Full Name', 'Position']).agg({
         'Hours': sum,
         'Wage': sum,
         'Tip': sum,
         'Wage + Tip': sum
         })
-    st.dataframe(df_agg, hide_index=False, height=650, column_config={
+    df_agg = df_agg.reset_index()
+    #df_agg = df_agg.drop(['index'], axis=1)
+    return df_agg
+
+
+def display_position_summary(_df):
+    st.dataframe(_df, hide_index=True, height=650, column_config={
         'Full Name': st.column_config.TextColumn(width='medium'),
         'Position': st.column_config.TextColumn(width='medium'),
         'Hours': st.column_config.NumberColumn(width='small', format='%.2f'),
         'Wage': st.column_config.NumberColumn(width='small', format='$ %.2f'),
         'Tip': st.column_config.NumberColumn(width='small', format='$ %.2f'),
-        'Wage + Tip': st.column_config.NumberColumn(width='small', format='$ %.2f')
+        'Wage + Tip': st.column_config.NumberColumn(format='$ %.2f')
     })
-    return df
+
+
+def display_payroll_summary(_df):
+    st.dataframe(_df, hide_index=True, height=650, column_config={
+        'Full Name': st.column_config.TextColumn(width='medium'),
+        'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
+        'Regular Tips': st.column_config.NumberColumn(format='$ %.2f'),
+        'Hours': st.column_config.NumberColumn(width='small', format='%.2f'),
+        'Wage': st.column_config.NumberColumn(width='small', format='$ %.2f'),
+        'Wage + Tip': st.column_config.NumberColumn(format='$ %.2f')
+    })
+
+
+def display_payroll_summary_House(_df):
+    st.dataframe(_df, hide_index=True, height=650, column_config={
+        'Full Name': st.column_config.TextColumn(width='medium'),
+        'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
+        'Regular Tips': st.column_config.NumberColumn(format='$ %.2f'),
+        'Hours': st.column_config.NumberColumn(width='small', format='%.2f'),
+        'Wage': st.column_config.NumberColumn(width='small', format='$ %.2f'),
+        'Wage + Tip': st.column_config.NumberColumn(format='$ %.2f'),
+        'House Tip': st.column_config.NumberColumn(width='small', format='$ %.2f')
+    })
 
 
 def _aggregate_name(_df: pd.DataFrame) -> pd.DataFrame:
@@ -149,7 +179,7 @@ def positiondefaults(val):
     mydict = _all_positions()
     for type in mydict.keys():
         for pos in mydict.get(type):
-            if pos == val: 
+            if pos == val:
                 return type
 
 
@@ -371,8 +401,22 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             with col43: _tip_info(3, tippingPool_Reg, splitvals, df_tipElligible, rates)
             with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible, rates)
             df_tipElligible['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible['Tip Pool']]
-            _df_tips = payroll_summary(df_tipElligible)
-        return _df_tips, tippingPool_Garden, tippingPool_Reg
+            #_df_tips = payroll_summary(df_tipElligible)
+            _df_tips = _add_payroll_summary(df_tipElligible)
+            df_tips_agg = _payroll_group_by_tips(_df_tips)
+            df_tips_agg = df_tips_agg.reset_index()
+            df_tips_agg = df_tips_agg.drop(['index'], axis=1)
+            df_tips_agg['House Tip'] = 0
+            df_tips_agg =st.data_editor(df_tips_agg, num_rows='fixed', height=650, hide_index=True, column_config={
+                'Full Name': st.column_config.TextColumn(width='medium', disabled=True),
+                'Garden Tips': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
+                'Regular Tips': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
+                'Hours': st.column_config.NumberColumn(width='small', format='%.2f', disabled=True),
+                'Wage': st.column_config.NumberColumn(width='small', format='$ %.2f', disabled=True),
+                'Wage + Tip': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
+                'House Tip': st.column_config.NumberColumn(width='medium', format='$ %.2f', disabled=False)
+            })
+        return df_tips_agg, tippingPool_Garden, tippingPool_Reg
 
 
 def _adjust_work_pos(_df):
@@ -397,7 +441,7 @@ def _adjust_work_pos(_df):
 
 
 def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg) -> pd.DataFrame:
-    with st.expander('Adjust Tip Pools', expanded=True):
+    with st.expander('Adjust Tip Pools', expanded=False):
         col1, col2, col3 = st.columns([.1,.85,.05])
         col1.subheader('Work Position Corrections')
         with col2:
@@ -435,8 +479,10 @@ def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tip
             with col43: _tip_info(3, tippingPool_Reg, splitvals, df_tipElligible_adjusted, rates)
             with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible_adjusted, rates)
             df_tipElligible_adjusted['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible_adjusted['Tip Pool']]
-            _df_tips = position_summary(df_tipElligible_adjusted)
-        return _df_tips
+            _df_tips_adjusted = position_summary(df_tipElligible_adjusted)
+            df_tips_adjusted_agg = _payroll_group_by_tips(_df_tips_adjusted)
+            df_tips_adjusted_agg = df_tips_adjusted_agg.reset_index()
+        return df_tips_adjusted_agg
 
 
 def filter_dataframe(_df: pd.DataFrame) -> pd.DataFrame:
@@ -460,9 +506,20 @@ def run(file_path: str) -> pd.DataFrame:
     _df = read_csv(file_path)
     _df = _clean_import(_df)
     _df = _combine_FullName(_df)
-    #with st.expander(label='Original Data', expanded=False):
-    #    filter_dataframe(_df)
+    with st.expander(label='Original Data', expanded=False):
+        filter_dataframe(_df)
     df_tipElligible, tip_pool_pos = _setup_tipping_pools(_df)
-    _df_tips, tippingPool_Garden, tippingPool_Reg = _tipping_pools(df_tipElligible, tip_pool_pos)
+    df_tips_agg, tippingPool_Garden, tippingPool_Reg = _tipping_pools(df_tipElligible, tip_pool_pos)
     _df_tips_adjusted = _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg)
-    return _df_tips, _df_tips_adjusted
+    with st.expander(label='Payroll Summary', expanded=False):
+        col1, col2 = st.columns([1,1])
+        with col1:
+            st.caption('Default Positions')
+            display_payroll_summary_House(df_tips_agg)
+        #st.markdown('---')
+        with col2:
+            st.caption('Revised Positions')
+            _df_tips_adjusted['House Tip'] = df_tips_agg['House Tip']
+            _df_tips_adjusted = _df_tips_adjusted.drop(['index'], axis=1)
+            display_payroll_summary_House(_df_tips_adjusted)
+    return df_tips_agg, _df_tips_adjusted

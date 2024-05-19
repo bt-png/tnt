@@ -265,7 +265,7 @@ def _display_tips(_df_tips):
     #col1, col2 = st.columns([3,2])
     st.caption('Grouped by Position')
     _df_tips_pos = _format_aggregate(_aggregate_name_position(_df_tips))
-    col1.dataframe(_df_tips_pos, column_config={
+    st.dataframe(_df_tips_pos, column_config={
         'Full Name': st.column_config.TextColumn(width='medium'),
         'Position': st.column_config.TextColumn(width='medium')
     })

@@ -36,7 +36,40 @@ def payroll_summary(_df):
         'Wage': sum,
         'Wage + Tip': sum
         })
-    st.write(df_agg)
+    st.dataframe(df_agg, hide_index=False, height=650, column_config={
+        'Full Name': st.column_config.TextColumn(width='medium'),
+        'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
+        'Regular Tips': st.column_config.NumberColumn(format='$ %.2f'),
+        'Hours': st.column_config.NumberColumn(width='small', format='%.2f'),
+        'Wage': st.column_config.NumberColumn(width='small', format='$ %.2f'),
+        'Wage + Tip': st.column_config.NumberColumn(width='small', format='$ %.2f')
+    })
+    return df
+
+
+def position_summary(_df):
+    keys = list(_all_positions().keys())
+    df = _df.copy()
+    df['Hours'] = df['Regular']
+    df['Wage'] = df['Paid Total']
+    df['Tip'] = df['Hours'] * df['Tip Rate']
+    df['Wage + Tip'] = df['Wage'] + df['Tip']
+    df['Garden Tips'] = [df[(df['Full Name'] == x) & (df['Tip Pool'].isin([keys[0], keys[1], keys[2]]))]['Tip'].sum() for x in df['Full Name']]
+    df['Regular Tips'] = [df[(df['Full Name'] == x) & (df['Tip Pool'].isin([keys[3], keys[4]]))]['Tip'].sum() for x in df['Full Name']]
+    df_agg = df.groupby(['Full Name', 'Position']).agg({
+        'Hours': sum,
+        'Wage': sum,
+        'Tip': sum,
+        'Wage + Tip': sum
+        })
+    st.dataframe(df_agg, hide_index=False, height=650, column_config={
+        'Full Name': st.column_config.TextColumn(width='medium'),
+        'Position': st.column_config.TextColumn(width='medium'),
+        'Hours': st.column_config.NumberColumn(width='small', format='%.2f'),
+        'Wage': st.column_config.NumberColumn(width='small', format='$ %.2f'),
+        'Tip': st.column_config.NumberColumn(width='small', format='$ %.2f'),
+        'Wage + Tip': st.column_config.NumberColumn(width='small', format='$ %.2f')
+    })
     return df
 
 
@@ -216,7 +249,6 @@ def _position_splits(_df):
 
 
 def _setup_tipping_pools(_df: pd.DataFrame) -> pd.DataFrame:
-    st.markdown('---')
     with st.expander('Tipping Rules'):
         col1, col2, col3 = st.columns([.1,.85,.05])
         col1.subheader('Tipping Elligibility')
@@ -328,6 +360,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         col1.subheader('Pay Cycle Tipping Pool')
         with col2:
             tippingPool_Garden, tippingPool_Reg = _tip_amounts('first')
+            st.markdown('---')
             splitvals = _tip_percents('first')
             df_tipElligible = _hrs_split(df_tipElligible, tip_pool_pos)
             rates=list()
@@ -338,12 +371,8 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             with col43: _tip_info(3, tippingPool_Reg, splitvals, df_tipElligible, rates)
             with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible, rates)
             df_tipElligible['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible['Tip Pool']]
-            #_df_hrs['Tip Total'] = _df_hrs['Tip Rate'] * _df_hrs['Regular']
-            #_df_hrs['Cash Wage plus Tip'] = _df_hrs['Tip Total'] + _df_hrs['Paid Total']  # _df_hrs[['Tip Total','Paid Total']].sum(axis=1)
             _df_tips = payroll_summary(df_tipElligible)
-            #st.markdown('---')
-            #_confirm_tip_total(_df_tips, tippingPool_Garden, tippingPool_Reg)
-        return _df_tips, tippingPool_Garden, tippingPool_Reg, splitvals
+        return _df_tips, tippingPool_Garden, tippingPool_Reg
 
 
 def _adjust_work_pos(_df):
@@ -367,47 +396,63 @@ def _adjust_work_pos(_df):
     return df_revised
 
 
-def _adjust_tipping_pools(_df_tips, tippingPool_Garden, tippingPool_Reg, user_garden_input,
-                          df_tipElligible, front_tip_pool, back_tip_pool) -> pd.DataFrame:
-    
-    with st.expander('Adjust Tipping Pool', expanded=False):
+def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg) -> pd.DataFrame:
+    with st.expander('Adjust Tip Pools', expanded=True):
         col1, col2, col3 = st.columns([.1,.85,.05])
         col1.subheader('Work Position Corrections')
         with col2:
+            col10, col11 = st.columns([1,1])
+            grouped = df_tipElligible.groupby(['Full Name', 'Position']).agg({
+                'Full Name': 'first',
+                'Position': 'first',
+                'Regular': sum,
+                'Paid Total': sum,
+                })
+            #filter_dataframe(grouped)
+            user_cat_input = col11.multiselect(
+                f"Choose 'Full Name' to Apply Filter",
+                grouped['Full Name'].unique(),
+
+            )
+            if len(user_cat_input) > 0:
+                grouped = grouped[grouped['Full Name'].isin(user_cat_input)]
+            col10.dataframe(grouped, hide_index=True, height=150, column_config={
+                'Full Name': st.column_config.TextColumn(width='medium'),
+                'Position': st.column_config.TextColumn(width='medium'),
+                'Regular': st.column_config.NumberColumn(width='small'),
+                'Paid Total': st.column_config.NumberColumn(width='small', format='$ %.2f')
+                })
+
             df_tipElligible_adjusted = _adjust_work_pos(df_tipElligible)
             st.markdown('---')
-            garden_split, reg_split = _tip_percents('adjust')
-            _hrs_gf, _hrs_gb, _hrs_rf, _hrs_rb = _hrs_split(df_tipElligible_adjusted, user_garden_input, front_tip_pool, back_tip_pool)
-            col40, col41, col42, col43 = st.columns([1,1,1,1])
-            with col40: _tip_info('Front', tippingPool_Garden, garden_split, _hrs_gf)
-            with col41: _tip_info('Back', tippingPool_Garden, (100-garden_split), _hrs_gb)
-            with col42: _tip_info('Front', tippingPool_Reg, reg_split, _hrs_rf)
-            with col43: _tip_info('Back', tippingPool_Reg, (100-reg_split), _hrs_rb)
-            st.markdown('---')
-            _df_tips_adjusted = pd.concat([_hrs_gf, _hrs_gb, _hrs_rf, _hrs_rb], ignore_index=True)
-            _display_changes(_df_tips, _df_tips_adjusted)
-            st.markdown('---')
-            _display_tips(_df_tips_adjusted)
-            st.markdown('---')
-            _confirm_tip_total(_df_tips_adjusted, tippingPool_Garden, tippingPool_Reg)
-    return _df_tips_adjusted, df_tipElligible_adjusted
+            splitvals = _tip_percents('second')
+            df_tipElligible_adjusted = _hrs_split(df_tipElligible_adjusted, tip_pool_pos)
+            rates=list()
+            col40, col41, col42, col43, col44 = st.columns([1,1,1,1,1])
+            with col40: _tip_info(0, tippingPool_Garden, splitvals, df_tipElligible_adjusted, rates)
+            with col41: _tip_info(1, tippingPool_Garden, splitvals, df_tipElligible_adjusted, rates)
+            with col42: _tip_info(2, tippingPool_Garden, splitvals, df_tipElligible_adjusted, rates)
+            with col43: _tip_info(3, tippingPool_Reg, splitvals, df_tipElligible_adjusted, rates)
+            with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible_adjusted, rates)
+            df_tipElligible_adjusted['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible_adjusted['Tip Pool']]
+            _df_tips = position_summary(df_tipElligible_adjusted)
+        return _df_tips
 
 
 def filter_dataframe(_df: pd.DataFrame) -> pd.DataFrame:
-    with st.expander(label='Original Data', expanded=False):
-        df = _df.copy()
-        with st.container():
-            to_filter_columns = ['Full Name']  # st.multiselect("Filter dataframe on", df.columns)  # ('Full Name', 'Position') #   # 
-            for column in to_filter_columns:
-                user_cat_input = st.multiselect(
-                    f"Values for {column}",
-                    df[column].unique() #,
-                    #default=()# list(df[column].unique())
-                )
-                if len(user_cat_input) > 0:
-                    df = df[df[column].isin(user_cat_input)]
-        st.write(df)
-        st.write(f"Total Hours: {round(df['Regular'].sum(),2)}, Total Cash Wages: ${round(df['Paid Total'].sum(),2):,}")
+    df = _df.copy()
+    with st.container():
+        to_filter_columns = ['Full Name']  # st.multiselect("Filter dataframe on", df.columns)  # ('Full Name', 'Position') #   # 
+        for column in to_filter_columns:
+            user_cat_input = st.multiselect(
+                f"Choose {column} to Apply Filter",
+                df[column].unique() #,
+                #default=()# list(df[column].unique())
+            )
+            if len(user_cat_input) > 0:
+                df = df[df[column].isin(user_cat_input)]
+    st.dataframe(df, hide_index=True, height=150)
+    st.write(f"Total Hours: {round(df['Regular'].sum(),2)}, Total Cash Wages: ${round(df['Paid Total'].sum(),2):,}")
     return df
 
 
@@ -415,10 +460,9 @@ def run(file_path: str) -> pd.DataFrame:
     _df = read_csv(file_path)
     _df = _clean_import(_df)
     _df = _combine_FullName(_df)
-    filter_dataframe(_df)
+    #with st.expander(label='Original Data', expanded=False):
+    #    filter_dataframe(_df)
     df_tipElligible, tip_pool_pos = _setup_tipping_pools(_df)
-    _df_tips, tippingPool_Garden, tippingPool_Reg, splitvals = _tipping_pools(df_tipElligible, tip_pool_pos)
-    st.stop()
-    _df_tips_adjusted, df_tipElligible_adjusted = _adjust_tipping_pools(_df_tips, tippingPool_Garden, tippingPool_Reg, user_garden_input,
-                          df_tipElligible, front_tip_pool, back_tip_pool)
+    _df_tips, tippingPool_Garden, tippingPool_Reg = _tipping_pools(df_tipElligible, tip_pool_pos)
+    _df_tips_adjusted = _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg)
     return _df_tips, _df_tips_adjusted

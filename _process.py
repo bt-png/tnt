@@ -1,4 +1,5 @@
 import streamlit as st
+#from st_aggrid import AgGrid
 import pandas as pd
 import numpy as np
 
@@ -70,8 +71,27 @@ def _payroll_group_by_pos(_df):
     return df_agg
 
 
-def display_position_summary(_df):
-    st.dataframe(_df, hide_index=True, height=650, column_order=['Employee Name', 'Position', 'Hours', 'Tip'],column_config={
+def display_position_summary(_df, rev):
+    df = _df.copy()
+    row_styles = []
+    current_style = None
+    _transp = 'background-color: #ffffff'
+    _highlight = 'background-color: #f2f7f2'
+    for index, row in df.iterrows():
+        if index % 2 == 0:
+            current_style = _transp
+        else:
+            current_style = _highlight
+        row_styles.append(current_style)
+    df['Changed'] = [x in list(rev['name']) and y in list(rev['from']) for x,y in zip(df['Employee Name'],df['Position'])]
+    df = df.reset_index(drop=True)
+    #df = df.style.apply(lambda x: row_styles, axis=0)
+    df = df.style.apply(lambda x: [
+        "background-color: red" if x['Changed'] and idx==2       
+        else ""
+        for idx, v in enumerate(x)
+        ], axis = 1)
+    st.dataframe(df, hide_index=True, height=650, column_order=['Employee Name', 'Position', 'Hours', 'Tip'],column_config={
         'Employee Name': st.column_config.TextColumn(width='medium'),
         'Position': st.column_config.TextColumn(width='medium'),
         'Hours': st.column_config.NumberColumn(width='small', format='%.2f'),
@@ -90,8 +110,38 @@ def display_payroll_summary(_df):
     })
 
 
+def display_payroll_summary_House_table(_df):
+    df = _df.copy()
+    row_styles = []
+    current_style = None
+    _transp = 'background-color: #ffffff'
+    _highlight = 'background-color: #f2f7f2'
+    for index, row in df.iterrows():
+        if index % 2 == 0:
+            current_style = _transp
+        else:
+            current_style = _highlight
+        row_styles.append(current_style)
+    df = df.reset_index(drop=True)
+    df = df.style.apply(lambda x: row_styles, axis=0)
+    st.table(df)
+
+
 def display_payroll_summary_House(_df):
-    st.dataframe(_df, hide_index=True, height=650, column_order=[
+    df = _df.copy()
+    row_styles = []
+    current_style = None
+    _transp = 'background-color: #ffffff'
+    _highlight = 'background-color: #f2f7f2'
+    for index, row in df.iterrows():
+        if index % 2 == 0:
+            current_style = _transp
+        else:
+            current_style = _highlight
+        row_styles.append(current_style)
+    df = df.reset_index(drop=True)
+    df = df.style.apply(lambda x: row_styles, axis=0)
+    st.dataframe(df, hide_index=True, height=650, column_order=[
         'Employee Name', 'Hours', 'Wage + Tip', 'Garden Tips', 'Regular Tips', 'House Tip', '% Change'], column_config={
         'Employee Name': st.column_config.TextColumn(width='medium'),
         'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
@@ -342,6 +392,18 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             df_tips_agg = df_tips_agg.reset_index()
             df_tips_agg = df_tips_agg.drop(['index'], axis=1)
             df_tips_agg['House Tip'] = 0
+            row_styles = []
+            current_style = None
+            _transp = 'background-color: #ffffff'
+            _highlight = 'background-color: #f2f7f2'
+            for index, row in df_tips_agg.iterrows():
+                if index % 2 == 0:
+                    current_style = _transp
+                else:
+                    current_style = _highlight
+                row_styles.append(current_style)
+            df_tips_agg = df_tips_agg.reset_index(drop=True)
+            df_tips_agg = df_tips_agg.style.apply(lambda x: row_styles, axis=0)
             df_tips_agg =st.data_editor(df_tips_agg, num_rows='fixed', height=650, hide_index=True, column_order=[
                 'Employee Name', 'Hours', 'Wage + Tip', 'Garden Tips', 'Regular Tips', 'House Tip'], column_config={
                     'Employee Name': st.column_config.TextColumn(width='medium', disabled=True),
@@ -372,7 +434,7 @@ def _adjust_work_pos(_df):
     df_add = pd.DataFrame({'Employee Name': result['name'], 'Regular': result['hrs'], 'Position': result['to'], 'reason': result['reason']})
     df_remove = pd.DataFrame({'Employee Name': result['name'], 'Regular': -result['hrs'], 'Position': result['from'], 'reason': result['reason']})
     df_revised = pd.concat([df_revised, df_add, df_remove], ignore_index=True)
-    return df_revised
+    return df_revised, result
 
 
 def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg, adjsplitvals) -> pd.DataFrame:
@@ -398,7 +460,7 @@ def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tip
                 'Regular': st.column_config.NumberColumn(label='Hours', width='small'),
                 })
 
-            df_tipElligible_adjusted = _adjust_work_pos(df_tipElligible)
+            df_tipElligible_adjusted, adj_result = _adjust_work_pos(df_tipElligible)
             st.markdown('---')
             splitvals = _tip_percents('second', adjsplitvals)
             df_tipElligible_adjusted = _hrs_split(df_tipElligible_adjusted, tip_pool_pos)
@@ -411,7 +473,11 @@ def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tip
             with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible_adjusted, rates)
             st.markdown('---')
             df_tipElligible_adjusted['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible_adjusted['Tip Pool']]
-            _df_tips_adjusted = position_summary(df_tipElligible_adjusted)
+            
+            #_df_tips_adjusted = position_summary(df_tipElligible_adjusted)
+            _df_tips_adjusted = _add_payroll_summary(df_tipElligible_adjusted)
+            df_agg = _payroll_group_by_pos(_df_tips_adjusted)
+            display_position_summary(df_agg, adj_result)
             df_tips_adjusted_agg = _payroll_group_by_tips(_df_tips_adjusted)
             df_tips_adjusted_agg = df_tips_adjusted_agg.reset_index()
         return df_tips_adjusted_agg
@@ -455,5 +521,7 @@ def run(file_path: str) -> pd.DataFrame:
             _df_tips_adjusted['% Change'] = round(100*((_df_tips_adjusted['Garden Tips']+_df_tips_adjusted['Regular Tips'])-df_tips_agg['House Tip'])/_df_tips_adjusted['House Tip'],2)
             _df_tips_adjusted['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in _df_tips_adjusted['% Change']]
             _df_tips_adjusted = _df_tips_adjusted.drop(['index'], axis=1)
+            #st.write(_df_tips_adjusted.to_html(classes='table table-striped text-center', justify='center'), unsafe_allow_html=True)
+            #AgGrid(_df_tips_adjusted)
             display_payroll_summary_House(_df_tips_adjusted)
     return df_tips_agg, _df_tips_adjusted

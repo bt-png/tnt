@@ -200,7 +200,10 @@ def positiondefaults(val):
 
 
 def position_pool(val, df):
-    return df[df['Position']==val]['Tip Pool'].iloc[0]
+    try:
+        return df[df['Position']==val]['Tip Pool'].iloc[0]
+    except Exception:
+        return False
 
 
 def pool_rate(x, rate):

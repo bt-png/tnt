@@ -143,12 +143,11 @@ def display_payroll_summary_House(_df):
     df = df.style.apply(lambda x: row_styles, axis=0)
     #Tip'] = df['Hours'] * df['Tip Rate']
     st.dataframe(df, hide_index=True, height=650, column_order=[
-        'Employee Name', 'Hours', 'Wage', 'Tip', 'Wage + Tip', 'Garden Tips', 'Regular Tips', 'House Tip', '% Change'], column_config={
+        'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'House Tip', '% Change'], column_config={
         'Employee Name': st.column_config.TextColumn(width='medium'),
         'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
         'Regular Tips': st.column_config.NumberColumn(format='$ %.2f'),
         'Hours': st.column_config.NumberColumn(label='Total Hours', format='%.2f'),
-        'Wage + Tip': st.column_config.NumberColumn(format='$ %.2f'),
         'House Tip': st.column_config.NumberColumn(format='$ %.2f'),
     })
 

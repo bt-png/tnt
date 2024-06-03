@@ -141,8 +141,8 @@ def display_payroll_summary_House(_df):
         row_styles.append(current_style)
     df = df.reset_index(drop=True)
     df = df.style.apply(lambda x: row_styles, axis=0)
-    #Tip'] = df['Hours'] * df['Tip Rate']
-    st.dataframe(df, hide_index=True, height=650, column_order=[
+    
+    st.dataframe(df, hide_index=True, column_order=[
         'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'House Tip', '% Change'], column_config={
         'Employee Name': st.column_config.TextColumn(width='medium'),
         'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
@@ -220,8 +220,18 @@ def pool_rate(x, rate):
         return rate[4]
 
 
-def _tip_pools(_df):
+def _avail_positions(_df):
+    with open('Override_Positions.md', 'r') as f:
+        override = f.read().splitlines()
+    df_override = pd.DataFrame({'Position': override})
     df = pd.DataFrame({'Position': _df['Position'].dropna().unique()})
+    df = pd.concat([df, df_override])
+    df = pd.DataFrame({'Position': df['Position'].unique()})
+    df = df.sort_values(['Position'])
+    return df
+
+def _tip_pools(_df):
+    df = _avail_positions(_df)
     df.insert(0, 'Tip Pool', '')
     df['Tip Pool'] = [positiondefaults(a) for a in df['Position']]
     st.write("Positions")
@@ -274,7 +284,7 @@ def _position_splits(_df):
         val = f.read()
     mydict = eval(val)
     df = pd.DataFrame(mydict)
-    positions = df_revised['Position'].dropna().unique()
+    positions = _avail_positions(_df)['Position']
     config = {
         'perc': st.column_config.NumberColumn('Take (%) of hrs', required=True, width='medium'),
         'from': st.column_config.SelectboxColumn('From Old Position', width='medium', options=positions, required=True),
@@ -313,10 +323,11 @@ def _tip_amounts(ukey):
     chefPercent = float(col41.number_input('Chef Percentage (%)', value=18, key=ukey+'2'))/100
     chefCut = round(totalPool*chefPercent,2)
     tippingPool_Garden = float(col42.text_input('Garden Pool ($)', value='0.00', key=ukey+'3'))
-    tippingPool_Reg = float(col43.text_input('Regular Pool ($)', value=str(totalPool-chefCut-tippingPool_Garden), key=ukey+'4', disabled=True))
+    helperPool = float(col42.text_input("Helper's Pool ($)", value='0.00', key=ukey+'4'))
+    tippingPool_Reg = float(col43.text_input('Regular Pool ($)', value=str(totalPool-chefCut-tippingPool_Garden-helperPool), key=ukey+'5', disabled=True))
+    chefCount = col40.number_input('# Chefs', value=4, key=ukey+'6')
+    chefCut_ind = col41.text_input('Each Chefs tip total ($)', value=str(chefCut/chefCount), key=ukey+'7', disabled=True)  
 
-    chefCount = col40.number_input('# Chefs', value=4, key=ukey+'5')
-    chefCut_ind = col41.text_input('Each Chefs tip total ($)', value=str(chefCut/chefCount), key=ukey+'6', disabled=True)  
     return tippingPool_Garden, tippingPool_Reg
 
 
@@ -389,12 +400,24 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         with col43: _tip_info(3, tippingPool_Reg, splitvals, df_tipElligible, rates)
         with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible, rates)
         st.markdown('---')
+        col1, col2, col3 = st.columns([1,.25,2])
+        df_house_tips = pd.DataFrame({})
+        df_house_tips['Employee Name'] = df_tipElligible['Employee Name'].unique()
+        df_house_tips['House Tip'] = 0.00
+        df_house_tips = col1.data_editor(data=df_house_tips, hide_index=True, column_config={
+            'Employee Name': st.column_config.TextColumn(width='medium', disabled=True),
+            'House Tip': st.column_config.NumberColumn(width='medium', disabled=False),
+        })
         df_tipElligible['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible['Tip Pool']]
         _df_tips = _add_payroll_summary(df_tipElligible)
         df_tips_agg = _payroll_group_by_tips(_df_tips)
         df_tips_agg = df_tips_agg.reset_index()
         df_tips_agg = df_tips_agg.drop(['index'], axis=1)
-        df_tips_agg['House Tip'] = 0
+        df_tips_agg = pd.merge(left=df_tips_agg, right=df_house_tips, on=['Employee Name'])
+        df_tips_agg['House Tip %'] = [x/df_tips_agg['House Tip'].sum() for x in df_tips_agg['House Tip']]
+        df_tips_agg['Assigned Tip %'] = [(x+y)/(df_tips_agg['Garden Tips'].sum()+df_tips_agg['Regular Tips'].sum()) for x,y in zip(df_tips_agg['Garden Tips'], df_tips_agg['Regular Tips'])]
+        df_tips_agg['% Change'] = round(100*((df_tips_agg['Assigned Tip %'])-df_tips_agg['House Tip %'])/df_tips_agg['House Tip %'],2)
+        df_tips_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_agg['% Change']]
         row_styles = []
         current_style = None
         _transp = 'background-color: #ffffff'
@@ -405,18 +428,19 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             else:
                 current_style = _highlight
             row_styles.append(current_style)
-        df_tips_agg = df_tips_agg.reset_index(drop=True)
-        df_tips_agg = df_tips_agg.style.apply(lambda x: row_styles, axis=0)
-        df_tips_agg =st.data_editor(df_tips_agg, num_rows='fixed', height=650, hide_index=True, column_order=[
-            'Employee Name', 'Hours', 'Wage + Tip', 'Garden Tips', 'Regular Tips', 'House Tip'], column_config={
+        df_tips_agg_p = df_tips_agg.reset_index(drop=True)
+        df_tips_agg_p = df_tips_agg_p.style.apply(lambda x: row_styles, axis=0)
+        #df_tips_agg =st.data_editor(df_tips_agg, num_rows='fixed', height=650, hide_index=True, column_order=[
+        df_tips_agg_p =col3.dataframe(df_tips_agg_p, hide_index=True, column_order=[
+            'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'House Tip', '% Change'], column_config={
                 'Employee Name': st.column_config.TextColumn(width='medium', disabled=True),
                 'Garden Tips': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
                 'Regular Tips': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
                 'Hours': st.column_config.NumberColumn(label='Total Hours', format='%.2f', disabled=True),
-                'Wage + Tip': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
-                'House Tip': st.column_config.NumberColumn(format='$ %.2f', disabled=False)
+                'House Tip': st.column_config.NumberColumn(format='$ %.2f', disabled=False),
+                '% Change': st.column_config.NumberColumn(format='%.2f')
         })
-        return df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals
+        return df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips
 
 
 def _adjust_work_pos(_df):
@@ -424,7 +448,7 @@ def _adjust_work_pos(_df):
     st.write("Revise Hours worked under Position")
     df = pd.DataFrame(columns=['name', 'hrs', 'from', 'to', 'reason'])
     employees = _df['Employee Name'].dropna().unique()
-    positions = _df['Position'].dropna().unique()
+    positions = _avail_positions(_df)['Position']
     config = {
         'name': st.column_config.SelectboxColumn('Employee Name', width='medium', required=True, options=employees),
         'hrs': st.column_config.NumberColumn('Move (hrs)', required=True, width='medium'),
@@ -440,7 +464,7 @@ def _adjust_work_pos(_df):
     return df_revised, result
 
 
-def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg, adjsplitvals) -> pd.DataFrame:
+def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg, adjsplitvals, df_house_tips) -> pd.DataFrame:
     with st.expander('Adjust Tip Pools', expanded=False):
         #col1, col2, col3 = st.columns([.1,.85,.05])
         #col1.subheader('Work Position Corrections')
@@ -476,13 +500,18 @@ def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tip
         with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible_adjusted, rates)
         st.markdown('---')
         df_tipElligible_adjusted['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible_adjusted['Tip Pool']]
-        
+        #st.write(df_tipElligible_adjusted)
         #_df_tips_adjusted = position_summary(df_tipElligible_adjusted)
         _df_tips_adjusted = _add_payroll_summary(df_tipElligible_adjusted)
         df_agg = _payroll_group_by_pos(_df_tips_adjusted)
         display_position_summary(df_agg, adj_result)
         df_tips_adjusted_agg = _payroll_group_by_tips(_df_tips_adjusted)
         df_tips_adjusted_agg = df_tips_adjusted_agg.reset_index()
+        df_tips_adjusted_agg = pd.merge(left=df_tips_adjusted_agg, right=df_house_tips, on=['Employee Name'])
+        df_tips_adjusted_agg['House Tip %'] = [x/df_tips_adjusted_agg['House Tip'].sum() for x in df_tips_adjusted_agg['House Tip']]
+        df_tips_adjusted_agg['Assigned Tip %'] = [(x+y)/(df_tips_adjusted_agg['Garden Tips'].sum()+df_tips_adjusted_agg['Regular Tips'].sum()) for x,y in zip(df_tips_adjusted_agg['Garden Tips'], df_tips_adjusted_agg['Regular Tips'])]
+        df_tips_adjusted_agg['% Change'] = round(100*((df_tips_adjusted_agg['Assigned Tip %'])-df_tips_adjusted_agg['House Tip %'])/df_tips_adjusted_agg['House Tip %'],2)
+        df_tips_adjusted_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_adjusted_agg['% Change']]
         return df_tips_adjusted_agg
 
 
@@ -509,27 +538,24 @@ def run(file_path: str) -> pd.DataFrame:
     with st.expander(label='Original Data', expanded=False):
         filter_dataframe(_df)
     df_tipElligible, tip_pool_pos = _setup_tipping_pools(_df)
-    df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals = _tipping_pools(df_tipElligible, tip_pool_pos)
-    _df_tips_adjusted = _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg, splitvals)
+    df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips = _tipping_pools(df_tipElligible, tip_pool_pos)
+    _df_tips_adjusted = _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips)
     with st.expander(label='Payroll Summary', expanded=False):
         col1, col2 = st.columns([1,1])
         with col1:
             st.caption('Default Positions')
-            df_tips_agg['House Tip %'] = [x/df_tips_agg['House Tip'].sum() for x in df_tips_agg['House Tip']]
-            df_tips_agg['Assigned Tip %'] = [(x+y)/(df_tips_agg['Garden Tips'].sum()+df_tips_agg['Regular Tips'].sum()) for x,y in zip(df_tips_agg['Garden Tips'], df_tips_agg['Regular Tips'])]
             # df_tips_agg['% Change'] = round(100*((df_tips_agg['Garden Tips']+df_tips_agg['Regular Tips'])-df_tips_agg['House Tip'])/df_tips_agg['House Tip'],2)
-            df_tips_agg['% Change'] = round(100*((df_tips_agg['Assigned Tip %'])-df_tips_agg['House Tip %'])/df_tips_agg['House Tip %'],2)
-            df_tips_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_agg['% Change']]
-            
+            #df_tips_agg['% Change'] = round(100*((df_tips_agg['Assigned Tip %'])-df_tips_agg['House Tip %'])/df_tips_agg['House Tip %'],2)
+            #df_tips_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_agg['% Change']]
             display_payroll_summary_House(df_tips_agg)
         with col2:
             st.caption('Revised Positions')
-            _df_tips_adjusted['House Tip'] = df_tips_agg['House Tip']
-            _df_tips_adjusted['House Tip %'] = [x/_df_tips_adjusted['House Tip'].sum() for x in _df_tips_adjusted['House Tip']]
-            _df_tips_adjusted['Assigned Tip %'] = [(x+y)/(_df_tips_adjusted['Garden Tips'].sum()+_df_tips_adjusted['Regular Tips'].sum()) for x,y in zip(_df_tips_adjusted['Garden Tips'], _df_tips_adjusted['Regular Tips'])]
+            #_df_tips_adjusted['House Tip'] = df_tips_agg['House Tip']
+            #_df_tips_adjusted['House Tip %'] = [x/_df_tips_adjusted['House Tip'].sum() for x in _df_tips_adjusted['House Tip']]
+            #_df_tips_adjusted['Assigned Tip %'] = [(x+y)/(_df_tips_adjusted['Garden Tips'].sum()+_df_tips_adjusted['Regular Tips'].sum()) for x,y in zip(_df_tips_adjusted['Garden Tips'], _df_tips_adjusted['Regular Tips'])]
             # _df_tips_adjusted['% Change'] = round(100*((_df_tips_adjusted['Garden Tips']+_df_tips_adjusted['Regular Tips'])-df_tips_agg['House Tip'])/_df_tips_adjusted['House Tip'],2)
-            _df_tips_adjusted['% Change'] = round(100*((_df_tips_adjusted['Assigned Tip %'])-_df_tips_adjusted['House Tip %'])/_df_tips_adjusted['House Tip %'],2)
-            _df_tips_adjusted['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in _df_tips_adjusted['% Change']]
+            #_df_tips_adjusted['% Change'] = round(100*((_df_tips_adjusted['Assigned Tip %'])-_df_tips_adjusted['House Tip %'])/_df_tips_adjusted['House Tip %'],2)
+            #_df_tips_adjusted['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in _df_tips_adjusted['% Change']]
             _df_tips_adjusted = _df_tips_adjusted.drop(['index'], axis=1)
             #st.write(_df_tips_adjusted.to_html(classes='table table-striped text-center', justify='center'), unsafe_allow_html=True)
             #AgGrid(_df_tips_adjusted)

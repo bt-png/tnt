@@ -12,8 +12,14 @@ def run():
     )
     st.write('Hello')
     with st.container():
+        choice = st.selectbox(label='Upload a new file, or continue from a save?', options=['Upload', 'Continue'], placeholder='Select...')
         col1, col2 = st.columns([9,1])
-        val = col1.file_uploader('Upload CSV', type={'csv'}, accept_multiple_files=False)
+        if choice == 'Upload':
+            val = col1.file_uploader('Upload CSV', type={'csv'}, accept_multiple_files=False)
+        elif choice == 'Continue':
+            val = 'current_input.csv'
+        else:
+            st.warning('Please make a choice')
         if val is not None:
             col2.header('')
             col2.header('')

@@ -2,15 +2,9 @@ import streamlit as st
 import _gitfiles
 import pandas as pd
 import numpy as np
+import json
 
-dict = {
-    'Chef Percent': 18.0,
-    'Total Pool': 1567.0,
-    'Garden Pool': 450.0,
-    'Helper Pool': 75,
-    'Num Chefs': 3
-    }
-newdict = dict.copy()
+
 
 def read_csv(file_path: str) -> pd.DataFrame:
     _df = pd.read_csv(file_path)
@@ -163,7 +157,8 @@ def display_payroll_summary_House(_df):
 def _tipelligibility(df):
     st.write("Employee's")
     with open('Tip_Exempt_Employees.md', 'r') as f:
-        exempt = f.read().splitlines()
+        default_tip_exempt_employees = f.read().splitlines()
+    exempt = dict.get('Tip Exempt Employees', default_tip_exempt_employees)
     exempt = set(exempt).intersection(df['Employee Name'].unique())
     if len(exempt)==0: exempt = None
     col20, col21, col22, col23 = st.columns([1,.1,1,.1])
@@ -189,6 +184,7 @@ def _tipelligibility(df):
         for names in df_tipElligible['Employee Name'].unique():
             _str += names + ' | '
         st.write(_str)
+    newdict['Tip Exempt Employees'] = user_not_tipped
     return df_tipElligible, df_tipInElligible
 
 
@@ -240,13 +236,20 @@ def _avail_positions(_df):
 
 def _tip_pools(_df):
     df = _avail_positions(_df)
-    df.insert(0, 'Tip Pool', '')
-    df['Tip Pool'] = [positiondefaults(a) for a in df['Position']]
+    #df.insert(0, 'Tip Pool', '')
+    #df['Tip Pool'] = [positiondefaults(a) for a in df['Position']]
+    with open('Tip_Pool_Positions.md', 'r') as f:
+        val = f.read()
+    dftmp = pd.DataFrame(eval(val))
+    dftmp = pd.DataFrame(dict.get('Tip Pool Positions', dftmp))
+    dftmp.reset_index(drop=True, inplace=True)
+    df = pd.merge(left=df, left_on='Position', how='outer', right=dftmp, right_on='Position')
     st.write("Positions")
     col30, col31, col32, col33, col34 = st.columns([1,.1,1,.1,1])
     df_tip = col30.data_editor(
         df,
         hide_index=True,
+        column_order=['Tip Pool', 'Position'],
         column_config={
             'Tip Pool': st.column_config.SelectboxColumn(
                 help='The tip category associated with Position',
@@ -258,6 +261,8 @@ def _tip_pools(_df):
                 )
             },
         )
+    newdict['Tip Pool Positions'] = df_tip.dropna().reset_index(drop=True).to_dict()
+
     return df_tip
 
 
@@ -291,7 +296,9 @@ def _position_splits(_df):
     with open('Position_Splits.md', 'r') as f:
         val = f.read()
     mydict = eval(val)
+    mydict = dict.get('Position Splits', mydict)
     df = pd.DataFrame(mydict)
+    df.reset_index(drop=True, inplace=True)
     positions = _avail_positions(_df)['Position']
     config = {
         'perc': st.column_config.NumberColumn('Take (%) of hrs', required=True, width='medium'),
@@ -300,6 +307,7 @@ def _position_splits(_df):
         'reason': st.column_config.TextColumn('For the Reason', width='large', required=True),
     }
     result = st.data_editor(df, column_config=config, num_rows='dynamic', hide_index=True)
+    newdict['Position Splits'] = result.to_dict()
     df_app = df_revised[df_revised['Position'].isin(result['from'])][['Employee Name', 'Regular', 'Position']]
     df_revised['reason'] = ''
     df_add = applysplits(df_app, result)
@@ -502,7 +510,6 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         #df_tips_adjusted_agg['Assigned Tip %'] = [(x+y)/(df_tips_adjusted_agg['Garden Tips'].sum()+df_tips_adjusted_agg['Regular Tips'].sum()) for x,y in zip(df_tips_adjusted_agg['Garden Tips'], df_tips_adjusted_agg['Regular Tips'])]
         #df_tips_adjusted_agg['% Change'] = round(100*((df_tips_adjusted_agg['Assigned Tip %'])-df_tips_adjusted_agg['House Tip %'])/df_tips_adjusted_agg['House Tip %'],2)
         #df_tips_adjusted_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_adjusted_agg['% Change']]
-    st.write(newdict)
     return df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips
 
 
@@ -595,6 +602,21 @@ def filter_dataframe(_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def run(file_path: str) -> pd.DataFrame:
+    global dict
+    global newdict
+    try:
+        with open('current_save.csv') as user_file:
+            file_contents = user_file.read()
+        dict = json.loads(file_contents)
+    except Exception:  
+        dict = {
+            'Chef Percent': 18.0,
+            'Total Pool': 1567.0,
+            'Garden Pool': 450.0,
+            'Helper Pool': 75,
+            'Num Chefs': 3
+            }
+    newdict = dict.copy()
     _df = read_csv(file_path)
     _df = _clean_import(_df)
     _df = _combine_FullName(_df)
@@ -627,16 +649,22 @@ def run(file_path: str) -> pd.DataFrame:
             #st.write(_df_tips_adjusted.to_html(classes='table table-striped text-center', justify='center'), unsafe_allow_html=True)
             #AgGrid(_df_tips_adjusted)
         #    display_payroll_summary_House(_df_tips_adjusted)
-    #if st.button('Save All Input Data'):
-        tmpdataframe = pd.DataFrame.from_dict(newdict, orient='columns')
+    if st.button('Save All Input Data'):
+        bitfile = json.dumps(newdict)
     #    #bitfile = tmpdataframe.to_string()
-        bitfile = tmpdataframe.to_csv()
-    #    _gitfiles.commit(
-    #        filename='current_save.csv',
-    #        message='api commit',
-    #        content=bitfile
-    #    )
+    #    bitfile = tmpdataframe.to_csv()
+        _gitfiles.commit(
+            filename='current_save.csv',
+            message='api commit',
+            content=bitfile
+        )
     #newdataframe = pd.read_csv('current_save.csv')
     #st.write(newdict.__hash__)
     #st.write(val)
+    col1, col2 = st.columns([1,1])
+    
+    #col1.write(savedata)
+    col1.write(dict)
+    #readdata = json.loads(savedata)
+    col2.write(newdict)
     return df_tips_agg #, _df_tips_adjusted

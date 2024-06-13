@@ -29,10 +29,19 @@ def exists(_repo, _filename) -> bool:
     return False
 
 
-def update(repo, filename, message, content):
-    contents = repo.get_contents(filename, ref="test")
-    repo.delete_file(contents.path, "remove test", contents.sha, branch="test")
-    push(repo, filename, message, content)
+def update(_repo, _filename, _message, _content):
+    #st.write('File Exists')
+    contents = _repo.get_contents(_filename, ref="main")
+    try:
+        _repo.delete_file(contents.path, "remove api", contents.sha, branch="main")
+        #_repo.update_file(contents.path, _message, _content, contents.sha, branch="test")
+        return push(_repo, _filename, _message, _content)
+    except Exception:
+        return False
+    return None
+    #success = _repo.update_file(contents.path, _message, _content, contents.sha, branch="test")
+    #success = push(_repo, _filename, _message, _content)
+    return success
 
 
 def push(_repo, _filename, _message, _content):
@@ -51,15 +60,26 @@ def push(_repo, _filename, _message, _content):
     
 
 def commit(filename, message, content) -> None:
+    #st.write('Trying to connect to GitHub')
     _g = connect()
     _repo = repo(_g, 'tnt')
-    #content = bit = uploaded_file.getvalue()
-    if exists(_repo, filename):
+    try:
         success = update(_repo, filename, message, content)
-    else:
+    except Exception:
         success = push(_repo, filename, message, content)
+    #content = bit = uploaded_file.getvalue()
+    #if exists(_repo, filename):
+    #    st.write('File Exists')
+    #    st.stop()
+    #    success = update(_repo, filename, message, content)
+    #else:
+    #    st.write('File doesnt exist')
+    #    success = push(_repo, filename, message, content)
     disconnect(_g)
-    st.write(success)
+    if success:
+        st.success('Saved')
+    else:
+        st.warning('Something went wrong')
 
 
 #stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))

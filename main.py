@@ -11,7 +11,7 @@ def run():
     )
     st.write('Hello')
     with st.container():
-        choice = st.selectbox(label='Upload a new file, or continue from a save?', options=['Upload', 'Continue'], placeholder='Select...')
+        choice = st.selectbox(label='Upload a new file, or continue from a save?', options=['Upload', 'Continue'], placeholder='Select...', index=1)
         col1, col2 = st.columns([9,1])
         if choice == 'Upload':
             val = col1.file_uploader('Upload CSV', type={'csv'}, accept_multiple_files=False)

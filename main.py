@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 import _process
 import _gitfiles
 
@@ -15,6 +16,14 @@ def run():
         if choice == 'Upload':
             val = col1.file_uploader('Upload CSV', type={'csv'}, accept_multiple_files=False)
             if val is not None:
+                # Delete existing save data
+                newdict = {}
+                bitfile = json.dumps(newdict)
+                _gitfiles.commit(
+                    filename='current_save.csv',
+                    message='reset new csv',
+                    content=bitfile
+                )
                 col2.header('')
                 col2.header('')
                 if col2.button('Save CSV'):

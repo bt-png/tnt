@@ -1,7 +1,22 @@
 {
-'Garden FOH': ['Garden Server'],
-'Garden Host': ['Garden Host'],
-'Garden BOH': ['Garden & Kitchen Assistant'],
-'FOH': ['Host','Server'],
-'BOH': ['Dishwasher','Kitchen Assistant', 'Back of House'],
+'Position': [
+    'Garden Server',
+    'Garden Host',
+    'Garden & Kitchen Assistant',
+    'Host',
+    'Server',
+    'Dishwasher',
+    'Kitchen Assistant',
+    'Back of House'
+    ],
+'Tip Pool': [
+    '1. Garden FOH',
+    '2. Garden Host',
+    '3. Garden BOH',
+    '4. FOH',
+    '4. FOH',
+    '5. BOH',
+    '5. BOH',
+    '5. BOH'
+    ]
 }

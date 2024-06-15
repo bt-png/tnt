@@ -57,7 +57,6 @@ def push(_repo, _filename, _message, _content):
     except Exception:
         False
 
-    
 
 def commit(filename, message, content) -> None:
     #st.write('Trying to connect to GitHub')

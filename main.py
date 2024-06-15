@@ -1,5 +1,4 @@
 import streamlit as st
-
 import _process
 import _gitfiles
 
@@ -24,7 +23,7 @@ def run():
                         filename='current_input.csv',
                         message='api commit',
                         content=bitfile
-                    )
+                    )                       
         elif choice == 'Continue':
             val = 'current_input.csv'
         else:

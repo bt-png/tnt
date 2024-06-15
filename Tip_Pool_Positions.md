@@ -10,13 +10,13 @@
     'Back of House'
     ],
 'Tip Pool': [
-    'Garden FOH',
-    'Garden Host',
-    'Garden BOH',
-    'FOH',
-    'FOH',
-    'BOH',
-    'BOH',
-    'BOH'
+    '1. Garden FOH',
+    '2. Garden Host',
+    '3. Garden BOH',
+    '4. FOH',
+    '4. FOH',
+    '5. BOH',
+    '5. BOH',
+    '5. BOH'
     ]
 }

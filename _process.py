@@ -5,7 +5,6 @@ import numpy as np
 import json
 
 
-
 def read_csv(file_path: str) -> pd.DataFrame:
     _df = pd.read_csv(file_path)
     return _df
@@ -13,7 +12,7 @@ def read_csv(file_path: str) -> pd.DataFrame:
 
 def _clean_import(_df: pd.DataFrame) -> pd.DataFrame:
     df = _df.copy()
-    df['Paid Total'] = df['Paid Total'].str.replace('$','',regex=False)
+    df['Paid Total'] = df['Paid Total'].str.replace('$', '', regex=False)
     df['Paid Total'] = df['Paid Total'].astype(float)
     df['Paid Total'] = df['Paid Total'].replace(np.nan, 0)
     return df
@@ -23,20 +22,6 @@ def _combine_FullName(_df: pd.DataFrame) -> pd.DataFrame:
     df = _df.copy()
     cols = ['First Name', 'Last Name']
     df['Employee Name'] = df[cols].apply(lambda row: ' '.join(row.values.astype(str)), axis=1)
-    return df
-
-
-def payroll_summary(_df):
-    df = _add_payroll_summary(_df)
-    df_agg = _payroll_group_by_tips(df)
-    display_payroll_summary(df_agg)
-    return df
-
-
-def position_summary(_df):
-    df = _add_payroll_summary(_df)
-    df_agg = _payroll_group_by_pos(df)
-    display_position_summary(df_agg)
     return df
 
 
@@ -56,7 +41,7 @@ def _payroll_group_by_tips(_df):
     df_agg = _df.groupby(['Employee Name', 'Garden Tips', 'Regular Tips']).agg({
         'Hours': 'sum',
         'Wage': 'sum',
-        'Wage + Tip': 'sum'
+        'Tip': 'sum'
         })
     df_agg = df_agg.reset_index()
     return df_agg
@@ -73,6 +58,48 @@ def _payroll_group_by_pos(_df):
     return df_agg
 
 
+def _add_helper_pool(_df, _helper_tips):
+    _df = pd.merge(left=_df, left_on=['Employee Name'], right=_helper_tips, right_on=['Employee Name'], how='outer')
+    _df['Helper Tips'] = _df['Helper Tips'].fillna(0)
+    return _df
+
+
+def payroll_summary(_df):
+    df = _add_payroll_summary(_df)
+    df_agg = _payroll_group_by_tips(df)
+    display_payroll_summary(df_agg)
+    return df
+
+
+def position_summary(_df):
+    df = _add_payroll_summary(_df)
+    df_agg = _payroll_group_by_pos(df)
+    display_position_summary(df_agg)
+    return df
+
+
+def df_row_styles(_df):
+    row_styles = []
+    current_style = None
+    _transp = 'background-color: #ffffff'
+    _highlight = 'background-color: #f2f7f2'
+    for index, row in _df.iterrows():
+        if index % 2 == 0:
+            current_style = _transp
+        else:
+            current_style = _highlight
+        row_styles.append(current_style)
+    return row_styles
+
+
+def table_color_rows(_df):
+    row_styles = df_row_styles(_df)
+    df_p = _df.reset_index(drop=True)
+    df_p = df_p.style.apply(lambda x: row_styles, axis=0)
+    df_p = df_p.format(precision=2)
+    return df_p
+
+
 def display_position_summary(_df, rev):
     df = _df.copy()
     row_styles = []
@@ -85,15 +112,15 @@ def display_position_summary(_df, rev):
         else:
             current_style = _highlight
         row_styles.append(current_style)
-    df['Changed'] = [x in list(rev['name']) and y in list(rev['from']) for x,y in zip(df['Employee Name'],df['Position'])]
+    df['Changed'] = [x in list(rev['name']) and y in list(rev['from']) for x, y in zip(df['Employee Name'], df['Position'])]
     df = df.reset_index(drop=True)
-    #df = df.style.apply(lambda x: row_styles, axis=0)
+    # df = df.style.apply(lambda x: row_styles, axis=0)
     df = df.style.apply(lambda x: [
-        "background-color: red" if x['Changed'] and idx==2       
+        "background-color: red" if x['Changed'] and idx == 2
         else ""
         for idx, v in enumerate(x)
-        ], axis = 1)
-    st.dataframe(df, hide_index=True, height=650, column_order=['Employee Name', 'Position', 'Hours', 'Tip'],column_config={
+        ], axis=1)
+    st.dataframe(df, hide_index=True, height=650, column_order=['Employee Name', 'Position', 'Hours', 'Tip'], column_config={
         'Employee Name': st.column_config.TextColumn(width='medium'),
         'Position': st.column_config.TextColumn(width='medium'),
         'Hours': st.column_config.NumberColumn(format='%.2f'),
@@ -129,29 +156,29 @@ def display_payroll_summary_House_table(_df):
     st.table(df)
 
 
-def display_payroll_summary_House(_df):
+def display_payroll_summary_House(_df, _dfchefs):
+    col1, col2 = st.columns([1, 1])
     df = _df.copy()
-    row_styles = []
-    current_style = None
-    _transp = 'background-color: #ffffff'
-    _highlight = 'background-color: #f2f7f2'
-    for index, row in df.iterrows():
-        if index % 2 == 0:
-            current_style = _transp
-        else:
-            current_style = _highlight
-        row_styles.append(current_style)
-    df = df.reset_index(drop=True)
-    df = df.style.apply(lambda x: row_styles, axis=0)
-    
-    st.dataframe(df, hide_index=True, column_order=[
-        'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'House Tip', '% Change'], column_config={
-        'Employee Name': st.column_config.TextColumn(width='medium'),
-        'Garden Tips': st.column_config.NumberColumn(format='$ %.2f'),
-        'Regular Tips': st.column_config.NumberColumn(format='$ %.2f'),
-        'Hours': st.column_config.NumberColumn(label='Total Hours', format='%.2f'),
-        'House Tip': st.column_config.NumberColumn(format='$ %.2f'),
-    })
+    df['CALC Tips'] = df['Garden Tips'] + df['Regular Tips'] + df['Helper Tips']
+    df['Wage + Tip'] = df['CALC Tips'] + df['Wage']
+    df = table_color_rows(df)
+    df = df.format('${:.2f}', subset=['CALC Tips', 'House Tip', 'Wage', 'Wage + Tip'])
+    col1.dataframe(df, hide_index=True, column_order=[
+        'Employee Name', 'House Tip', 'Hours', 'CALC Tips', 'Wage', 'Wage + Tip'], column_config={
+            'Hours': st.column_config.NumberColumn(label='Total Hours'),
+            }
+    )
+    chefs = _dfchefs.copy()
+    chefs = chefs[chefs['Chef Tips'] > 0]
+    chefs = chefs.reset_index(drop=True)
+    chefs = table_color_rows(chefs)
+    chefs = chefs.format('${:.2f}', subset=['Chef Tips'])
+    col2.dataframe(chefs, hide_index=True, column_order=[
+        'Employee Name', 'Chef Tips'], column_config={
+            'Employee Name': st.column_config.TextColumn(label='Chef'),
+            'Chef Tips': st.column_config.NumberColumn(label='Tip')
+        }
+    )
 
 
 def _tipelligibility(df):
@@ -160,8 +187,8 @@ def _tipelligibility(df):
         default_tip_exempt_employees = f.read().splitlines()
     exempt = dict.get('Tip Exempt Employees', default_tip_exempt_employees)
     exempt = set(exempt).intersection(df['Employee Name'].unique())
-    if len(exempt)==0: exempt = None
-    col20, col21, col22, col23 = st.columns([1,.1,1,.1])
+    if len(exempt) == 0: exempt = None
+    col20, col21, col22, col23 = st.columns([1, .1, 1, .1])
     try:
         user_not_tipped = col20.multiselect(
                     "Employee's with job classification not elligible for tips",
@@ -188,7 +215,6 @@ def _tipelligibility(df):
     return df_tipElligible, df_tipInElligible
 
 
-#@st.cache_data
 def _all_positions():
     with open('Tip_Pool_Positions.md', 'r') as f:
         val = f.read()
@@ -209,7 +235,7 @@ def positiondefaults(val):
 
 def position_pool(val, df):
     try:
-        return df[df['Position']==val]['Tip Pool'].iloc[0]
+        return df[df['Position'] == val]['Tip Pool'].iloc[0]
     except Exception:
         return False
 
@@ -238,10 +264,9 @@ def _avail_positions(_df):
     df = df.sort_values(['Position'])
     return df
 
+
 def _tip_pools(_df):
     df = _avail_positions(_df)
-    #df.insert(0, 'Tip Pool', '')
-    #df['Tip Pool'] = [positiondefaults(a) for a in df['Position']]
     with open('Tip_Pool_Positions.md', 'r') as f:
         val = f.read()
     dftmp = pd.DataFrame(eval(val))
@@ -249,7 +274,7 @@ def _tip_pools(_df):
     dftmp.reset_index(drop=True, inplace=True)
     df = pd.merge(left=df, left_on='Position', how='outer', right=dftmp, right_on='Position')
     st.write("Positions")
-    col30, col31, col32, col33, col34 = st.columns([1,.1,1,.1,1])
+    col30, col31, col32, col33, col34 = st.columns([1, .1, 1, .1, 1])
     df_tip = col30.data_editor(
         df,
         hide_index=True,
@@ -258,7 +283,7 @@ def _tip_pools(_df):
             'Tip Pool': st.column_config.SelectboxColumn(
                 help='The tip category associated with Position',
                 width='medium',
-                options= _all_positions()
+                options=_all_positions()
                 ),
             'Position': st.column_config.TextColumn(
                 width='large'
@@ -271,26 +296,26 @@ def _tip_pools(_df):
 
 
 def applysplits_hrs(hrs, pos, _match):
-    val = _match[_match['from']==pos].iloc[0]['perc']
+    val = _match[_match['from'] == pos].iloc[0]['perc']
     val = val/100
     return val*hrs
 
 
 def applysplits_reas(hrs, pos, _match):
-    reas = _match[_match['from']==pos].iloc[0]['reason']
+    reas = _match[_match['from'] == pos].iloc[0]['reason']
     return reas
 
 
 def applysplits_pos(hrs, pos, _match):
-    pos = _match[_match['from']==pos].iloc[0]['to']
+    pos = _match[_match['from'] == pos].iloc[0]['to']
     return pos
 
 
 def applysplits(_df, _res):
     df = _df.copy()
-    df['Regular'] = [applysplits_hrs(*a,_res) for a in tuple(zip(_df['Regular'], _df['Position']))]
-    df['New Position'] = [applysplits_pos(*a,_res) for a in tuple(zip(_df['Regular'], _df['Position']))]
-    df['reason'] = [applysplits_reas(*a,_res) for a in tuple(zip(_df['Regular'], _df['Position']))]
+    df['Regular'] = [applysplits_hrs(*a, _res) for a in tuple(zip(_df['Regular'], _df['Position']))]
+    df['New Position'] = [applysplits_pos(*a, _res) for a in tuple(zip(_df['Regular'], _df['Position']))]
+    df['reason'] = [applysplits_reas(*a, _res) for a in tuple(zip(_df['Regular'], _df['Position']))]
     return df
 
 
@@ -325,9 +350,6 @@ def _position_splits(_df):
 
 
 def _setup_tipping_pools(_df: pd.DataFrame) -> pd.DataFrame:
-    #col1, col2, col3 = st.columns([.1,.85,.05])
-    #col1.subheader('Tipping Elligibility')
-    #with col2:
     df_tipElligible, df_tipInElligible = _tipelligibility(_df)
     st.markdown('---')
     tip_pool_pos = _tip_pools(df_tipElligible)
@@ -337,28 +359,25 @@ def _setup_tipping_pools(_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _tip_amounts(ukey):
-    col40, col41, col42 = st.columns([1,1,1])
-    col43, col44, col45 = st.columns([1,1,1])
+    col40, col41, col42 = st.columns([1, 1, 1])
+    col43, col44, col45 = st.columns([1, 1, 1])
     totalPool = float(col40.text_input('Total Pool ($)', value=dict.get('Total Pool', 0.00), key=ukey+'1'))
     newdict['Total Pool'] = totalPool
     tippingPool_Garden = float(col41.text_input('Garden Pool ($)', value=dict.get('Garden Pool', 0.00), key=ukey+'3'))
     newdict['Garden Pool'] = tippingPool_Garden
     chefPercent = float(col44.number_input('Chef Percentage (%)', value=dict.get('Chef Percent', 18), key=ukey+'2'))/100
     newdict['Chef Percent'] = chefPercent*100
-    chefCut = round(totalPool*chefPercent,2)
+    chefCut = round(totalPool * chefPercent, 2)
     helperPool = float(col45.text_input("Helper's Pool ($)", value=dict.get('Helper Pool', 0.00), key=ukey+'4'))
-    tippingPool_Reg = float(col42.text_input('Regular Pool ($)', value=str(totalPool-chefCut-tippingPool_Garden-helperPool), key=ukey+'5', disabled=True))
+    tippingPool_Reg = float(col42.text_input('Regular Pool ($)', value=str(totalPool-chefCut-tippingPool_Garden - helperPool), key=ukey+'5', disabled=True))
     newdict['Helper Pool'] = helperPool
-    #chefCount = col40.number_input('# Chefs', value=dict.get('Num Chefs', 4), key=ukey+'6')
-    #newdict['Num Chefs'] = chefCount
-    #chefCut_ind = col41.text_input('Each Chefs tip total ($)', value=str(chefCut/chefCount), key=ukey+'7', disabled=True)  
     return tippingPool_Garden, tippingPool_Reg, chefCut, helperPool
 
 
 def _tip_percents(ukey, split_vals):
     keys = list(_all_positions())
     vals = list()
-    col40, col41, col42, colspace, col43, col44 = st.columns([1,1,1,.5, 1,1])
+    col40, col41, col42, colspace, col43, col44 = st.columns([1, 1, 1, .5, 1, 1])
     col40.subheader(keys[0])
     col41.subheader(keys[1])
     col42.subheader(keys[2])
@@ -375,7 +394,6 @@ def _tip_percents(ukey, split_vals):
 def _hrs_split(_df, _pool):
     df = _df.copy()
     df['Tip Pool'] = [position_pool(x, _pool) for x in df['Position']]
-    keys = list(_all_positions())
     return df
 
 
@@ -386,8 +404,8 @@ def _tip_info(idx, pooltotal, split, _df_hrs, rates):
     emp_count = _df_hrs[_df_hrs['Tip Pool'] == poolname]['Employee Name'].unique()
     if len(_df_hrs.index) == 0:
         str = 'No Entries'
-        hrs=0
-        rate=0
+        hrs = 0
+        rate = 0
     else:
         hrs = _df_hrs[_df_hrs['Tip Pool'] == keys[idx]]['Regular'].sum()
         rate = total/hrs if hrs != 0 else 0
@@ -397,61 +415,82 @@ def _tip_info(idx, pooltotal, split, _df_hrs, rates):
 
                 Tip Rate/hr: ${round(rate,2)}  
                 '''
-    if hrs==0 and total != 0:
+    if hrs == 0 and total != 0:
         st.warning(str)
-    elif hrs!=0 and total ==0:
+    elif hrs != 0 and total == 0:
         st.warning(str)
     else:
         st.info(str)
     rates.append(rate)
 
 
-def table_color_rows(_df):
-    row_styles = []
-    current_style = None
-    _transp = 'background-color: #ffffff'
-    _highlight = 'background-color: #f2f7f2'
-    for index, row in _df.iterrows():
-        if index % 2 == 0:
-            current_style = _transp
-        else:
-            current_style = _highlight
-        row_styles.append(current_style)
-    df_p = _df.reset_index(drop=True)
-    df_p = df_p.style.apply(lambda x: row_styles, axis=0)
-    return df_p
+def _adjust_work_pos(_df):
+    df_revised = _df.copy()
+    st.write("Revise Hours worked under Position")
+    df = pd.DataFrame(dict.get('Work Position Revisions'))
+    if df.empty:
+        df = pd.DataFrame(columns=['name', 'hrs', 'from', 'to', 'reason'])
+    df.reset_index(drop=True, inplace=True)
+    employees = _df['Employee Name'].dropna().unique()
+    positions = _avail_positions(_df)['Position']
+    config = {
+        'name': st.column_config.SelectboxColumn('Employee Name', width='medium', required=True, options=employees),
+        'hrs': st.column_config.NumberColumn('Move (hrs)', required=True, width='medium'),
+        'from': st.column_config.SelectboxColumn('From Old Position', width='medium', options=positions, required=True),
+        'to': st.column_config.SelectboxColumn('to New Position', width='medium', options=positions, required=True),
+        'reason': st.column_config.TextColumn('Reason', width='large', required=True, default='split shift'),
+    }
+    result = st.data_editor(df, column_config=config, num_rows='dynamic', hide_index=True)
+    newdict['Work Position Revisions'] = result.to_dict()
+    df_revised['reason'] = ''
+    df_add = pd.DataFrame({'Employee Name': result['name'], 'Regular': result['hrs'], 'Position': result['to'], 'reason': result['reason']})
+    df_remove = pd.DataFrame({'Employee Name': result['name'], 'Regular': -result['hrs'], 'Position': result['from'], 'reason': result['reason']})
+    df_revised = pd.concat([df_revised, df_add, df_remove], ignore_index=True)
+    return df_revised, result
 
 
 def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
-    #col1, col2, col3 = st.columns([.1,.85,.05])
-    #col1.subheader('Pay Cycle Tipping Pool')
-    #with col2:
     tippingPool_Garden, tippingPool_Reg, chefCut, helperPool = _tip_amounts('first')
     st.markdown('---')
     with st.expander('Chefs and Helpers', expanded=False):
         col0, col10, col01, col11, col02, col12 = st.columns([.1, 1, .1, 1, .1, 1])
+        # CHEFS
         with open('Chef_Employees.md', 'r') as f:
-            chefs = f.read().splitlines()
-        chefs = pd.DataFrame({'Employee Name': chefs})
-        chefs['Shifts Worked'] = 0
+            list_chefs = f.read().splitlines()
+        chefs = pd.DataFrame(dict.get(
+            'Chef Work Shifts',
+            {'Employee Name': list_chefs, 'Shifts Worked': [0 for x in list_chefs]}
+            ))
         chefs = col10.data_editor(chefs, column_config={
             'Employee Name': st.column_config.TextColumn('Chefs Name', disabled=True),
             'Shifts Worked': st.column_config.NumberColumn(default=0)
             }, num_rows='fixed', hide_index=True)
-        chefs['Chef Tip'] = round(chefCut * chefs['Shifts Worked']/chefs['Shifts Worked'].sum(),2)
-
+        newdict['Chef Work Shifts'] = chefs.to_dict()
+        if chefs['Shifts Worked'].sum() > 0:
+            chefs['Chef Tips'] = round(chefCut * chefs['Shifts Worked']/chefs['Shifts Worked'].sum(), 2)
+        else:
+            if chefCut > 0:
+                col10.warning('Please enter number of shifts worked for each chef so funds can be distributed')
+            chefs['Chef Tips'] = 0
+        # HELPERS
         helpers = col11.multiselect(
                     "Employees eligible for the Helper Pool",
                     df_tipElligible['Employee Name'].unique(),
+                    default=dict.get('Helpers', None),
                     key='15'
                 )
+        newdict['Helpers'] = helpers
         helpers = pd.DataFrame({'Employee Name': helpers})
-        helpers['Helper Tip'] = round(helperPool/len(helpers),2)
+        if len(helpers) > 0:
+            helpers['Helper Tips'] = round(helperPool/len(helpers), 2)
+        else:
+            if helperPool > 0:
+                col11.warning('Please select Employee names so funds can be distributed')
+            helpers['Helper Tips'] = 0
         chef_helper = pd.merge(left=chefs, left_on='Employee Name', right=helpers, right_on='Employee Name', how='outer')
-        col12.dataframe(chef_helper, column_order=['Employee Name', 'Chef Tip', 'Helper Tip'], hide_index=True)
-        #exempt = dict.get('Tip Exempt Employees', default_tip_exempt_employees)
+        col12.dataframe(chef_helper, column_order=['Employee Name', 'Chef Tips', 'Helper Tips'], hide_index=True)
     with st.expander('Revise Working Positions', expanded=False):
-        col10, col11 = st.columns([1,1])
+        col10, col11 = st.columns([1, 1])
         grouped = df_tipElligible.groupby(['Employee Name', 'Position']).agg({
             'Employee Name': 'first',
             'Position': 'first',
@@ -469,7 +508,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             'Regular': st.column_config.NumberColumn(label='Hours', width='small'),
             })
         df_tipElligible_adjusted, adj_result = _adjust_work_pos(df_tipElligible)
-        if len(adj_result)>0:
+        if len(adj_result) > 0:
             newdict.update([('Adjusted Hours', adj_result.to_dict())])
         else:
             newdict.update([('Adjusted Hours', pd.DataFrame().to_dict())])
@@ -481,10 +520,10 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         dict.get('Regular FOH', 66),
         0
         ]
-    splitvals = _tip_percents('first',def_splitvalues)
+    splitvals = _tip_percents('first', def_splitvalues)
     df_tipElligible = _hrs_split(df_tipElligible_adjusted, tip_pool_pos)
-    rates=list()
-    col40, col41, col42, colspace, col43, col44 = st.columns([1,1,1,.5,1,1])
+    rates = list()
+    col40, col41, col42, colspace, col43, col44 = st.columns([1, 1, 1, .5, 1, 1])
     with col40: _tip_info(0, tippingPool_Garden, splitvals, df_tipElligible, rates)
     with col41: _tip_info(1, tippingPool_Garden, splitvals, df_tipElligible, rates)
     with col42: _tip_info(2, tippingPool_Garden, splitvals, df_tipElligible, rates)
@@ -494,73 +533,68 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
     newdict['Garden Host'] = splitvals[1]
     newdict['Regular FOH'] = splitvals[3]
     st.markdown('---')
-    # House Tip
-    col1, col2, col3, col4, col5 = st.columns([1, .25, 2, .25, 2])
+    # House Tip INPUT DATAFRAME
+    col1, col2, col3, col4, col5 = st.columns([1, .25, 2.5, .25, 2])
     with col1:
-        df_house_tips = pd.DataFrame({})
-        df_house_tips['Employee Name'] = df_tipElligible['Employee Name'].unique()
-        df_house_tips['House Tip'] = 0.00
+        df_house_tips = pd.DataFrame(dict.get('House Tips'))
+        if df_house_tips.empty:
+            df_house_tips = pd.DataFrame({})
+            df_house_tips['Employee Name'] = df_tipElligible['Employee Name'].unique()
+            df_house_tips['House Tip'] = 0.00
+        else:
+            df_house_tips.reset_index(drop=True, inplace=True)
         df_house_tips = table_color_rows(df_house_tips)
         df_house_tips = st.data_editor(data=df_house_tips, hide_index=True, column_config={
             'Employee Name': st.column_config.TextColumn(disabled=True),
             'House Tip': st.column_config.NumberColumn(disabled=False),
         })
-        newdict.update([('House Tips', df_house_tips.to_dict())])
+        newdict['House Tips'] = df_house_tips.to_dict()
     with col3:
         df_tipElligible['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible['Tip Pool']]
         _df_tips = _add_payroll_summary(df_tipElligible)
         df_tips_agg = _payroll_group_by_tips(_df_tips)
+        df_tips_agg = _add_helper_pool(df_tips_agg, helpers)
         df_tips_agg = df_tips_agg.reset_index()
         df_tips_agg = df_tips_agg.drop(['index'], axis=1)
         df_tips_agg = pd.merge(left=df_tips_agg, right=df_house_tips, on=['Employee Name'])
         df_tips_agg['House Tip %'] = [x/df_tips_agg['House Tip'].sum() for x in df_tips_agg['House Tip']]
-        df_tips_agg['Assigned Tip %'] = [(x+y)/(df_tips_agg['Garden Tips'].sum()+df_tips_agg['Regular Tips'].sum()) for x,y in zip(df_tips_agg['Garden Tips'], df_tips_agg['Regular Tips'])]
-        df_tips_agg['% Change'] = round(100*((df_tips_agg['Assigned Tip %'])-df_tips_agg['House Tip %'])/df_tips_agg['House Tip %'],2)
-        df_tips_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_agg['% Change']]
+        df_tips_agg['Assigned Tip %'] = [(x+y)/(df_tips_agg['Garden Tips'].sum()+df_tips_agg['Regular Tips'].sum()) for x, y in zip(df_tips_agg['Garden Tips'], df_tips_agg['Regular Tips'])]
+        df_tips_agg['% Change'] = round(100*((df_tips_agg['Assigned Tip %'])-df_tips_agg['House Tip %'])/df_tips_agg['House Tip %'], 2)
+        df_tips_agg['% Change'] = [str(x)+'%' if abs(x) != np.inf else '' for x in df_tips_agg['% Change']]
         df_tips_agg_p = table_color_rows(df_tips_agg)
         df_tips_agg_p = st.dataframe(df_tips_agg_p, hide_index=True, column_order=[
-            'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'House Tip', '% Change'], column_config={
+            'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'House Tip', 'Helper Tips', '% Change'], column_config={
                 'Employee Name': st.column_config.TextColumn(width='medium', disabled=True),
-                'Garden Tips': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
-                'Regular Tips': st.column_config.NumberColumn(format='$ %.2f', disabled=True),
+                'Garden Tips': st.column_config.NumberColumn(disabled=True),
+                'Regular Tips': st.column_config.NumberColumn(disabled=True),
+                'Helper Tips': st.column_config.NumberColumn(disabled=True),
                 'Hours': st.column_config.NumberColumn(label='Total Hours', format='%.2f', disabled=True),
-                'House Tip': st.column_config.NumberColumn(format='$ %.2f', disabled=False),
-                '% Change': st.column_config.NumberColumn(format='%.2f')
+                'House Tip': st.column_config.NumberColumn(disabled=False),
+                '% Change': st.column_config.NumberColumn()
         })
     with col5:
         df_agg = _payroll_group_by_pos(_df_tips)
-        display_position_summary(df_agg, adj_result)
-        #df_tips_adjusted_agg = _payroll_group_by_tips(_df_tips)
-        #df_tips_adjusted_agg = df_tips_adjusted_agg.reset_index()
-        #df_tips_adjusted_agg = pd.merge(left=df_tips_adjusted_agg, right=df_house_tips, on=['Employee Name'])
-        #df_tips_adjusted_agg['House Tip %'] = [x/df_tips_adjusted_agg['House Tip'].sum() for x in df_tips_adjusted_agg['House Tip']]
-        #df_tips_adjusted_agg['Assigned Tip %'] = [(x+y)/(df_tips_adjusted_agg['Garden Tips'].sum()+df_tips_adjusted_agg['Regular Tips'].sum()) for x,y in zip(df_tips_adjusted_agg['Garden Tips'], df_tips_adjusted_agg['Regular Tips'])]
-        #df_tips_adjusted_agg['% Change'] = round(100*((df_tips_adjusted_agg['Assigned Tip %'])-df_tips_adjusted_agg['House Tip %'])/df_tips_adjusted_agg['House Tip %'],2)
-        #df_tips_adjusted_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_adjusted_agg['% Change']]
-    return df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips
+        #display_position_summary(df_agg, adj_result)
+        df_agg = df_agg.reset_index(drop=True)
+        df_agg['Changed'] = [x in list(adj_result['name']) and y in list(adj_result['from']) for x, y in zip(df_agg['Employee Name'], df_agg['Position'])]
+        #df_agg_p = table_color_rows(df_agg)
+        df_agg_p = table_color_rows(df_agg)
+        df_agg_p = df_agg_p.apply(lambda x: [
+            "background-color: red" if x['Changed'] and idx == 2
+            else ''
+            for idx, v in enumerate(x)
+            ], axis=1)
+        st.dataframe(df_agg_p, hide_index=True, height=650, column_order=['Employee Name', 'Position', 'Hours', 'Tip'], column_config={
+            'Employee Name': st.column_config.TextColumn(width='medium'),
+            'Position': st.column_config.TextColumn(width='medium'),
+            'Hours': st.column_config.NumberColumn(),
+            'Tip': st.column_config.NumberColumn(),
+        })
+
+    return df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips, chefs
 
 
-def _adjust_work_pos(_df):
-    df_revised = _df.copy()
-    st.write("Revise Hours worked under Position")
-    df = pd.DataFrame(columns=['name', 'hrs', 'from', 'to', 'reason'])
-    employees = _df['Employee Name'].dropna().unique()
-    positions = _avail_positions(_df)['Position']
-    config = {
-        'name': st.column_config.SelectboxColumn('Employee Name', width='medium', required=True, options=employees),
-        'hrs': st.column_config.NumberColumn('Move (hrs)', required=True, width='medium'),
-        'from': st.column_config.SelectboxColumn('From Old Position', width='medium', options=positions, required=True),
-        'to': st.column_config.SelectboxColumn('to New Position', width='medium', options=positions, required=True),
-        'reason': st.column_config.TextColumn('Reason', width='large', required=True, default='split shift'),
-    }
-    result = st.data_editor(df, column_config=config, num_rows='dynamic', hide_index=True)
-    df_revised['reason'] = ''
-    df_add = pd.DataFrame({'Employee Name': result['name'], 'Regular': result['hrs'], 'Position': result['to'], 'reason': result['reason']})
-    df_remove = pd.DataFrame({'Employee Name': result['name'], 'Regular': -result['hrs'], 'Position': result['from'], 'reason': result['reason']})
-    df_revised = pd.concat([df_revised, df_add, df_remove], ignore_index=True)
-    return df_revised, result
-
-
+'''
 def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg, adjsplitvals, df_house_tips) -> pd.DataFrame:
     #col1, col2, col3 = st.columns([.1,.85,.05])
     #col1.subheader('Work Position Corrections')
@@ -588,8 +622,8 @@ def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tip
     st.markdown('---')
     splitvals = _tip_percents('second', adjsplitvals)
     df_tipElligible_adjusted = _hrs_split(df_tipElligible_adjusted, tip_pool_pos)
-    rates=list()
-    col40, col41, col42, colspace, col43, col44 = st.columns([1,1,1,.5,1,1])
+    rates = list()
+    col40, col41, col42, colspace, col43, col44 = st.columns([1, 1, 1, .5, 1, 1])
     with col40: _tip_info(0, tippingPool_Garden, splitvals, df_tipElligible_adjusted, rates)
     with col41: _tip_info(1, tippingPool_Garden, splitvals, df_tipElligible_adjusted, rates)
     with col42: _tip_info(2, tippingPool_Garden, splitvals, df_tipElligible_adjusted, rates)
@@ -610,6 +644,7 @@ def _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tip
     df_tips_adjusted_agg['% Change'] = round(100*((df_tips_adjusted_agg['Assigned Tip %'])-df_tips_adjusted_agg['House Tip %'])/df_tips_adjusted_agg['House Tip %'],2)
     df_tips_adjusted_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_adjusted_agg['% Change']]
     return df_tips_adjusted_agg
+'''
 
 
 def filter_dataframe(_df: pd.DataFrame) -> pd.DataFrame:
@@ -635,7 +670,7 @@ def run(file_path: str) -> pd.DataFrame:
         with open('current_save.csv') as user_file:
             file_contents = user_file.read()
         dict = json.loads(file_contents)
-    except Exception:  
+    except Exception:
         dict = {
             'Chef Percent': 18.0,
             'Total Pool': 1567.0,
@@ -647,51 +682,29 @@ def run(file_path: str) -> pd.DataFrame:
     _df = read_csv(file_path)
     _df = _clean_import(_df)
     _df = _combine_FullName(_df)
-    tab1, tab2, tab3, tab5 = st.tabs(['Original Data', 'Tipping Rules', 'Tipping Pool', 'Payroll Summary'])
+    tab1, tab2, tab3, tab4 = st.tabs(['Original Data', 'Tipping Rules', 'Tipping Pool', 'Payroll Summary'])
     with tab1:
         filter_dataframe(_df)
     with tab2:
         df_tipElligible, tip_pool_pos = _setup_tipping_pools(_df)
     with tab3:
-        df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips = _tipping_pools(df_tipElligible, tip_pool_pos)
-    #with tab4:
-    #    _df_tips_adjusted = _adjust_tipping_pools(df_tipElligible, tip_pool_pos, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips)
-    with tab5:
-        #col1, col2 = st.columns([1,1])
-        #with col1:
-        st.caption('Default Positions')
-            # df_tips_agg['% Change'] = round(100*((df_tips_agg['Garden Tips']+df_tips_agg['Regular Tips'])-df_tips_agg['House Tip'])/df_tips_agg['House Tip'],2)
-            #df_tips_agg['% Change'] = round(100*((df_tips_agg['Assigned Tip %'])-df_tips_agg['House Tip %'])/df_tips_agg['House Tip %'],2)
-            #df_tips_agg['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in df_tips_agg['% Change']]
-        display_payroll_summary_House(df_tips_agg)
-        #with col2:
-        #    st.caption('Revised Positions')
-            #_df_tips_adjusted['House Tip'] = df_tips_agg['House Tip']
-            #_df_tips_adjusted['House Tip %'] = [x/_df_tips_adjusted['House Tip'].sum() for x in _df_tips_adjusted['House Tip']]
-            #_df_tips_adjusted['Assigned Tip %'] = [(x+y)/(_df_tips_adjusted['Garden Tips'].sum()+_df_tips_adjusted['Regular Tips'].sum()) for x,y in zip(_df_tips_adjusted['Garden Tips'], _df_tips_adjusted['Regular Tips'])]
-            # _df_tips_adjusted['% Change'] = round(100*((_df_tips_adjusted['Garden Tips']+_df_tips_adjusted['Regular Tips'])-df_tips_agg['House Tip'])/_df_tips_adjusted['House Tip'],2)
-            #_df_tips_adjusted['% Change'] = round(100*((_df_tips_adjusted['Assigned Tip %'])-_df_tips_adjusted['House Tip %'])/_df_tips_adjusted['House Tip %'],2)
-            #_df_tips_adjusted['% Change'] = [str(x)+'%' if abs(x)!=np.inf else '' for x in _df_tips_adjusted['% Change']]
-        #    _df_tips_adjusted = _df_tips_adjusted.drop(['index'], axis=1)
-            #st.write(_df_tips_adjusted.to_html(classes='table table-striped text-center', justify='center'), unsafe_allow_html=True)
-            #AgGrid(_df_tips_adjusted)
-        #    display_payroll_summary_House(_df_tips_adjusted)
+        df_tips_agg, tippingPool_Garden, tippingPool_Reg, splitvals, df_house_tips, df_chefs = _tipping_pools(df_tipElligible, tip_pool_pos)
+    with tab4:
+        display_payroll_summary_House(df_tips_agg, df_chefs)
     if st.button('Save All Input Data'):
         bitfile = json.dumps(newdict)
-    #    #bitfile = tmpdataframe.to_string()
-    #    bitfile = tmpdataframe.to_csv()
-        _gitfiles.commit(
-            filename='current_save.csv',
-            message='api commit',
-            content=bitfile
-        )
-    #newdataframe = pd.read_csv('current_save.csv')
-    #st.write(newdict.__hash__)
-    #st.write(val)
-    #col1, col2 = st.columns([1,1])
-    
-    #col1.write(savedata)
-    #col1.write(dict)
-    #readdata = json.loads(savedata)
-    #col2.write(newdict)
-    return df_tips_agg #, _df_tips_adjusted
+        if True:
+            _gitfiles.commit(
+                filename='current_save.csv',
+                message='api commit',
+                content=bitfile
+            )
+        else:
+            # Save locally during testing
+            try:
+                with open('current_save.csv', 'w') as file:
+                    file.write(bitfile)
+                st.success('Saved')
+            except Exception:
+                st.warning('Something went wrong')
+    return df_tips_agg

@@ -534,7 +534,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
     newdict['Regular FOH'] = splitvals[3]
     st.markdown('---')
     # House Tip INPUT DATAFRAME
-    col1, col2, col3, col4, col5 = st.columns([1, .25, 2.5, .25, 2])
+    col1, col3, col5 = st.columns([1, 2.5, 2])
     with col1:
         df_house_tips = pd.DataFrame(dict.get('House Tips'))
         if df_house_tips.empty:
@@ -558,12 +558,13 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         df_tips_agg = df_tips_agg.drop(['index'], axis=1)
         df_tips_agg = pd.merge(left=df_tips_agg, right=df_house_tips, on=['Employee Name'])
         df_tips_agg['House Tip %'] = [x/df_tips_agg['House Tip'].sum() for x in df_tips_agg['House Tip']]
-        df_tips_agg['Assigned Tip %'] = [(x+y)/(df_tips_agg['Garden Tips'].sum()+df_tips_agg['Regular Tips'].sum()) for x, y in zip(df_tips_agg['Garden Tips'], df_tips_agg['Regular Tips'])]
+        df_tips_agg['Assigned Tip %'] = [(x+y+z)/(df_tips_agg['Garden Tips'].sum()+df_tips_agg['Regular Tips'].sum()+df_tips_agg['Helper Tips'].sum()) for x, y, z in zip(df_tips_agg['Garden Tips'], df_tips_agg['Regular Tips'], df_tips_agg['Helper Tips'])]
         df_tips_agg['% Change'] = round(100*((df_tips_agg['Assigned Tip %'])-df_tips_agg['House Tip %'])/df_tips_agg['House Tip %'], 2)
         df_tips_agg['% Change'] = [str(x)+'%' if abs(x) != np.inf else '' for x in df_tips_agg['% Change']]
         df_tips_agg_p = table_color_rows(df_tips_agg)
+        df_tips_agg_p = df_tips_agg_p.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip'])
         df_tips_agg_p = st.dataframe(df_tips_agg_p, hide_index=True, column_order=[
-            'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'House Tip', 'Helper Tips', '% Change'], column_config={
+            'Employee Name', 'Hours', 'Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', '% Change'], column_config={
                 'Employee Name': st.column_config.TextColumn(width='medium', disabled=True),
                 'Garden Tips': st.column_config.NumberColumn(disabled=True),
                 'Regular Tips': st.column_config.NumberColumn(disabled=True),
@@ -584,6 +585,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             else ''
             for idx, v in enumerate(x)
             ], axis=1)
+        df_agg_p = df_agg_p.format('${:.2f}', subset=['Tip'])
         st.dataframe(df_agg_p, hide_index=True, height=650, column_order=['Employee Name', 'Position', 'Hours', 'Tip'], column_config={
             'Employee Name': st.column_config.TextColumn(width='medium'),
             'Position': st.column_config.TextColumn(width='medium'),

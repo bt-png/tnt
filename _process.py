@@ -546,6 +546,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             'Directed': st.column_config.NumberColumn(format='$%.2f')
             }, num_rows='fixed', hide_index=True)
         newdict['Chef Work Shifts'] = chefs.to_dict()
+        st.write(chefs.to_dict())
         if chefs['Shifts Worked'].sum() > 0:
             chefs['Chef Tips'] = round(chefCut * chefs['Shifts Worked']/chefs['Shifts Worked'].sum(), 2)
         else:
@@ -595,9 +596,9 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             })
         df_tipElligible_adjusted, adj_result = _adjust_work_pos(df_tipElligible)
         if len(adj_result) > 0:
-            newdict.update([('Adjusted Hours', adj_result.to_dict())])
+            newdict['Adjusted Hours'] = adj_result.to_dict()
         else:
-            newdict.update([('Adjusted Hours', pd.DataFrame().to_dict())])
+            newdict['Adjusted Hours'] = pd.DataFrame().to_dict()
     st.markdown('---')
     def_splitvalues = [
         dict.get('Garden FOH', 70),

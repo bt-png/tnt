@@ -3,6 +3,7 @@ import json
 import _process
 import _gitfiles
 import pandas as pd
+import numpy as np
 from io import StringIO
 
 
@@ -10,7 +11,6 @@ dfs = ['df_sales', 'df_schedule', 'df_work_hours']
 
 
 def loadFilestoSessionState(files):
-    
     for df in dfs:
         if df not in st.session_state:
             st.session_state[df] = None
@@ -21,6 +21,13 @@ def loadFilestoSessionState(files):
         except:
             dataframe = pd.read_excel(file)
         if 'Sales' == dataframe.columns[0]:
+            dataframe = dataframe.set_index('Sales').transpose()
+            for col in dataframe.columns:
+                dataframe[col] = dataframe[col].str.replace('$', '', regex=False)
+                dataframe[col] = dataframe[col].str.replace(',', '', regex=False)
+                dataframe[col] = dataframe[col].astype(float)
+                dataframe[col] = dataframe[col].replace(np.nan, 0)
+            #st.dataframe(dataframe)
             st.session_state['df_sales'] = dataframe.copy()
         elif 'Schedule' == dataframe.columns[0]:
             st.session_state['df_schedule'] = dataframe.copy()
@@ -37,7 +44,8 @@ def writeSessionStateDataFrames():
 def allDataFramesLoaded():
     checkSum=0
     for df in dfs:
-        if len(st.session_state[df]) > 0:
+        if st.session_state[df] is not None:
+            #if len(st.session_state[df]) > 0:
             checkSum += 1
         else:
             st.write(f'Data has not been loaded for {df}')
@@ -45,6 +53,11 @@ def allDataFramesLoaded():
         return True
     return False
 
+
+def loadTotalTips():
+    df = st.session_state[dfs[0]]
+    st.session_state['dict']['Total Pool'] = round(df['Tip'].sum(),2)
+                                 
 
 def run():
     st.set_page_config(
@@ -61,8 +74,10 @@ def run():
             if files is not None:
                 loadFilestoSessionState(files)
                 if allDataFramesLoaded():
-                    st.success()
-                    writeSessionStateDataFrames()
+                    loadTotalTips()
+                    #st.success('All Files Received')
+                    #writeSessionStateDataFrames()
+                    _process.continue_run(st.session_state['df_work_hours'])
             if val is not None:
                 # Delete existing save data
                 newdict = {}

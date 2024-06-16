@@ -2,6 +2,48 @@ import streamlit as st
 import json
 import _process
 import _gitfiles
+import pandas as pd
+from io import StringIO
+
+
+dfs = ['df_sales', 'df_schedule', 'df_work_hours']
+
+
+def loadFilestoSessionState(files):
+    
+    for df in dfs:
+        if df not in st.session_state:
+            st.session_state[df] = None
+    
+    for file in files:
+        try:
+            dataframe = pd.read_csv(file)
+        except:
+            dataframe = pd.read_excel(file)
+        if 'Sales' == dataframe.columns[0]:
+            st.session_state['df_sales'] = dataframe.copy()
+        elif 'Schedule' == dataframe.columns[0]:
+            st.session_state['df_schedule'] = dataframe.copy()
+        elif 'First Name' == dataframe.columns[0]:
+            st.session_state['df_work_hours'] = dataframe.copy()
+
+
+def writeSessionStateDataFrames():
+    for df in dfs:
+        st.write(f'Loaded data for {df}')
+        st.write(st.session_state[df])
+
+
+def allDataFramesLoaded():
+    checkSum=0
+    for df in dfs:
+        if len(st.session_state[df]) > 0:
+            checkSum += 1
+        else:
+            st.write(f'Data has not been loaded for {df}')
+    if checkSum == len(dfs):
+        return True
+    return False
 
 
 def run():
@@ -11,10 +53,16 @@ def run():
     )
     st.write('Hello')
     with st.container():
-        choice = st.selectbox(label='Upload a new file, or continue from a save?', options=['Upload', 'Continue'], placeholder='Select...', index=1)
+        choice = st.selectbox(label='Upload new files, or continue from a save?', options=['Upload', 'Continue'], placeholder='Select...', index=0)
         col1, col2 = st.columns([9,1])
         if choice == 'Upload':
-            val = col1.file_uploader('Upload CSV', type={'csv'}, accept_multiple_files=False)
+            val = None #col1.file_uploader('Upload CSV', type={'csv'}, accept_multiple_files=False)
+            files = col1.file_uploader('Upload Files', type=['csv', 'xlsx'], accept_multiple_files=True)
+            if files is not None:
+                loadFilestoSessionState(files)
+                if allDataFramesLoaded():
+                    st.success()
+                    writeSessionStateDataFrames()
             if val is not None:
                 # Delete existing save data
                 newdict = {}

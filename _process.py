@@ -714,7 +714,7 @@ def run(file_path: str) -> pd.DataFrame:
                 'Helper Pool': 75,
                 'Num Chefs': 3
                 }
-        st.sessions_state['dict'] = dict
+        st.session_state['dict'] = dict
     if 'newdict' not in st.session_state:
         st.session_state['newdict'] = st.session_state['dict'].copy()
     _df = read_csv(file_path)

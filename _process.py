@@ -192,22 +192,22 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
     )
     col2.subheader('Tip Summary')
     # Pool Values
-    tp = newdict['Total Pool']
-    gp = newdict['Garden Pool']
-    cp = newdict['Chef Percent']/100
-    hp = newdict['Helper Pool']
+    tp = st.session_state['newdict']['Total Pool']
+    gp = st.session_state['newdict']['Garden Pool']
+    cp = st.session_state['newdict']['Chef Percent']/100
+    hp = st.session_state['newdict']['Helper Pool']
     rem = tp-gp-hp
     cc = cp*rem
     rp = rem-cc
     # Garden Splits
-    g_foh = newdict['Garden FOH']/100
-    g_h = newdict['Garden Host']/100
+    g_foh = st.session_state['newdict']['Garden FOH']/100
+    g_h = st.session_state['newdict']['Garden Host']/100
     g_boh = 1-g_foh-g_h
     # Regular Splits
     helper_sum = _df['Helper Tips'].sum()
     helper_percent = helper_sum/rp
     rem_percent = 1-helper_percent
-    r_foh = rem_percent*newdict['Regular FOH']/100
+    r_foh = rem_percent*st.session_state['newdict']['Regular FOH']/100
     r_boh = 1-r_foh-helper_percent
 
     tip_summary = pd.DataFrame({
@@ -242,7 +242,7 @@ def _tipelligibility(df):
     st.write("Employee's")
     with open('Tip_Exempt_Employees.md', 'r') as f:
         default_tip_exempt_employees = f.read().splitlines()
-    exempt = dict.get('Tip Exempt Employees', default_tip_exempt_employees)
+    exempt = st.session_state['dict'].get('Tip Exempt Employees', default_tip_exempt_employees)
     exempt = set(exempt).intersection(df['Employee Name'].unique())
     if len(exempt) == 0: exempt = None
     col20, col21, col22, col23 = st.columns([1, .1, 1, .1])
@@ -268,7 +268,7 @@ def _tipelligibility(df):
         for names in df_tipElligible['Employee Name'].unique():
             _str += names + ' | '
         st.write(_str)
-    newdict['Tip Exempt Employees'] = user_not_tipped
+    st.session_state['newdict']['Tip Exempt Employees'] = user_not_tipped
     return df_tipElligible, df_tipInElligible
 
 
@@ -276,7 +276,7 @@ def _all_positions():
     with open('Tip_Pool_Positions.md', 'r') as f:
         val = f.read()
     dftmp = pd.DataFrame(eval(val))
-    dftmp = pd.DataFrame(dict.get('Tip Pool Positions', dftmp))
+    dftmp = pd.DataFrame(st.session_state['dict'].get('Tip Pool Positions', dftmp))
     dftmp.reset_index(drop=True, inplace=True)
     dftmp.sort_values('Tip Pool', inplace=True)
     return dftmp['Tip Pool'].dropna().unique()
@@ -327,7 +327,7 @@ def _tip_pools(_df):
     with open('Tip_Pool_Positions.md', 'r') as f:
         val = f.read()
     dftmp = pd.DataFrame(eval(val))
-    dftmp = pd.DataFrame(dict.get('Tip Pool Positions', dftmp))
+    dftmp = pd.DataFrame(st.session_state['dict'].get('Tip Pool Positions', dftmp))
     dftmp.reset_index(drop=True, inplace=True)
     df = pd.merge(left=df, left_on='Position', how='outer', right=dftmp, right_on='Position')
     st.write("Positions")
@@ -347,7 +347,7 @@ def _tip_pools(_df):
                 )
             },
         )
-    newdict['Tip Pool Positions'] = df_tip.dropna().reset_index(drop=True).to_dict()
+    st.session_state['newdict']['Tip Pool Positions'] = df_tip.dropna().reset_index(drop=True).to_dict()
     return df_tip
 
 
@@ -381,7 +381,7 @@ def _position_splits(_df):
     with open('Position_Splits.md', 'r') as f:
         val = f.read()
     mydict = eval(val)
-    mydict = dict.get('Position Splits', mydict)
+    mydict = st.session_state['dict'].get('Position Splits', mydict)
     df = pd.DataFrame(mydict)
     df.reset_index(drop=True, inplace=True)
     positions = _avail_positions(_df)['Position']
@@ -392,7 +392,7 @@ def _position_splits(_df):
         'reason': st.column_config.TextColumn('For the Reason', width='large', required=True),
     }
     result = st.data_editor(df, column_config=config, num_rows='dynamic', hide_index=True)
-    newdict['Position Splits'] = result.to_dict()
+    st.session_state['newdict']['Position Splits'] = result.to_dict()
     df_app = df_revised[df_revised['Position'].isin(result['from'])][['Employee Name', 'Regular', 'Position']]
     df_revised['reason'] = ''
     df_add = applysplits(df_app, result)
@@ -416,17 +416,17 @@ def _setup_tipping_pools(_df: pd.DataFrame) -> pd.DataFrame:
 
 def _tip_amounts(ukey):
     col40, col41, col42 = st.columns([1, 1, 1])
-    totalPool = float(col40.text_input('Total Pool ($)', value=dict.get('Total Pool', 0.00), key=ukey+'1'))
-    newdict['Total Pool'] = totalPool
-    tippingPool_Garden = float(col41.text_input('Garden Pool ($)', value=dict.get('Garden Pool', 0.00), key=ukey+'3'))
-    newdict['Garden Pool'] = tippingPool_Garden
-    helperPool = float(col42.text_input("Helper Pool ($)", value=dict.get('Helper Pool', 0.00), key=ukey+'4'))
+    totalPool = float(col40.text_input('Total Pool ($)', value=st.session_state['dict'].get('Total Pool', 0.00), key=ukey+'1'))
+    st.session_state['newdict']['Total Pool'] = totalPool
+    tippingPool_Garden = float(col41.text_input('Garden Pool ($)', value=st.session_state['dict'].get('Garden Pool', 0.00), key=ukey+'3'))
+    st.session_state['newdict']['Garden Pool'] = tippingPool_Garden
+    helperPool = float(col42.text_input("Helper Pool ($)", value=st.session_state['dict'].get('Helper Pool', 0.00), key=ukey+'4'))
     remaining = float(col40.text_input('Remaining Pool ($)', value=totalPool-tippingPool_Garden-helperPool, disabled=True))
-    chefPercent = float(col41.number_input('Chef Percentage (%)', value=dict.get('Chef Percent', 18), key=ukey+'2'))/100
-    newdict['Chef Percent'] = chefPercent*100
+    chefPercent = float(col41.number_input('Chef Percentage (%)', value=st.session_state['dict'].get('Chef Percent', 18), key=ukey+'2'))/100
+    st.session_state['newdict']['Chef Percent'] = chefPercent*100
     chefCut = float(col41.text_input('Chef Cut ($)', value=round(remaining * chefPercent, 2), disabled=True))
     tippingPool_Reg = float(col42.text_input('Regular Pool ($)', value=str(totalPool - tippingPool_Garden - helperPool - chefCut), key=ukey+'5', disabled=True))
-    newdict['Helper Pool'] = helperPool
+    st.session_state['newdict']['Helper Pool'] = helperPool
     col1, col2 = st.columns([5,1])
     col1.caption('''
                 $Remaining Pool = Total Pool - (Garden Pool + Helper Pool)$  
@@ -434,7 +434,7 @@ def _tip_amounts(ukey):
                 ${Regular Pool} = {Remaining Pool} - {Chef Cut}$  
                 ''')
     if col2.button('Save'):
-        bitfile = json.dumps(newdict)
+        bitfile = json.dumps(st.session_state['newdict'])
         _gitfiles.commit(
             filename='current_save.csv',
             message='api commit',
@@ -496,7 +496,7 @@ def _tip_info(idx, pooltotal, split, _df_hrs, rates):
 def _adjust_work_pos(_df):
     df_revised = _df.copy()
     st.write("Revise Hours worked under Position")
-    df = pd.DataFrame(dict.get('Work Position Revisions'))
+    df = pd.DataFrame(st.session_state['dict'].get('Work Position Revisions'))
     if df.empty:
         df = pd.DataFrame(columns=['name', 'hrs', 'from', 'to', 'reason'])
     df.reset_index(drop=True, inplace=True)
@@ -510,14 +510,14 @@ def _adjust_work_pos(_df):
         'reason': st.column_config.TextColumn('Reason', width='large', required=True, default='split shift'),
     }
     result = st.data_editor(df, column_config=config, num_rows='dynamic', hide_index=True)
-    newdict['Work Position Revisions'] = result.to_dict()
+    st.session_state['newdict']['Work Position Revisions'] = result.to_dict()
     df_revised['reason'] = ''
     df_add = pd.DataFrame({'Employee Name': result['name'], 'Regular': result['hrs'], 'Position': result['to'], 'reason': result['reason']})
     df_remove = pd.DataFrame({'Employee Name': result['name'], 'Regular': -result['hrs'], 'Position': result['from'], 'reason': result['reason']})
     df_revised = pd.concat([df_revised, df_add, df_remove], ignore_index=True)
     col1, col2 = st.columns([5,1])
     if col2.button('Save', key='positionsave'):
-        bitfile = json.dumps(newdict)
+        bitfile = json.dumps(st.session_state['newdict'])
         _gitfiles.commit(
             filename='current_save.csv',
             message='api commit',
@@ -534,7 +534,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         # CHEFS
         with open('Chef_Employees.md', 'r') as f:
             list_chefs = f.read().splitlines()
-        chefs = pd.DataFrame(dict.get(
+        chefs = pd.DataFrame(st.session_state['dict'].get(
             'Chef Work Shifts',
             {'Employee Name': list_chefs, 'Shifts Worked': [0 for x in list_chefs], 'Directed': [0.0 for x in list_chefs]}
             ))
@@ -545,8 +545,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             'Employee Name': st.column_config.TextColumn('Chefs Name', disabled=True),
             'Directed': st.column_config.NumberColumn(format='$%.2f')
             }, num_rows='fixed', hide_index=True)
-        newdict['Chef Work Shifts'] = chefs.to_dict()
-        st.write(chefs.to_dict())
+        st.session_state['newdict']['Chef Work Shifts'] = chefs.to_dict()
         if chefs['Shifts Worked'].sum() > 0:
             chefs['Chef Tips'] = round(chefCut * chefs['Shifts Worked']/chefs['Shifts Worked'].sum(), 2)
         else:
@@ -557,10 +556,10 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         helpers = col11.multiselect(
                     "Employees eligible for the Helper Pool",
                     df_tipElligible['Employee Name'].unique(),
-                    default=dict.get('Helpers', None),
+                    default=st.session_state['dict'].get('Helpers', None),
                     key='15'
                 )
-        newdict['Helpers'] = helpers
+        st.session_state['newdict']['Helpers'] = helpers
         helpers = pd.DataFrame({'Employee Name': helpers})
         if len(helpers) > 0:
             helpers['Helper Tips'] = round(helperPool/len(helpers), 2)
@@ -596,15 +595,15 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             })
         df_tipElligible_adjusted, adj_result = _adjust_work_pos(df_tipElligible)
         if len(adj_result) > 0:
-            newdict['Adjusted Hours'] = adj_result.to_dict()
+            st.session_state['newdict']['Adjusted Hours'] = adj_result.to_dict()
         else:
-            newdict['Adjusted Hours'] = pd.DataFrame().to_dict()
+            st.session_state['newdict']['Adjusted Hours'] = pd.DataFrame().to_dict()
     st.markdown('---')
     def_splitvalues = [
-        dict.get('Garden FOH', 70),
-        dict.get('Garden Host', 15),
+        st.session_state['dict'].get('Garden FOH', 70),
+        st.session_state['dict'].get('Garden Host', 15),
         0,
-        dict.get('Regular FOH', 66),
+        st.session_state['dict'].get('Regular FOH', 66),
         0
         ]
     splitvals = _tip_percents('first', def_splitvalues)
@@ -616,14 +615,14 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
     with col42: _tip_info(2, tippingPool_Garden, splitvals, df_tipElligible, rates)
     with col43: _tip_info(3, tippingPool_Reg, splitvals, df_tipElligible, rates)
     with col44: _tip_info(4, tippingPool_Reg, splitvals, df_tipElligible, rates)
-    newdict['Garden FOH'] = splitvals[0]
-    newdict['Garden Host'] = splitvals[1]
-    newdict['Regular FOH'] = splitvals[3]
+    st.session_state['newdict']['Garden FOH'] = splitvals[0]
+    st.session_state['newdict']['Garden Host'] = splitvals[1]
+    st.session_state['newdict']['Regular FOH'] = splitvals[3]
     st.markdown('---')
     # House Tip INPUT DATAFRAME
     col1, col2, col3 = st.columns([3, 5, 4])
     with col1:
-        df_house_tips = pd.DataFrame(dict.get('House Tips'))
+        df_house_tips = pd.DataFrame(st.session_state['dict'].get('House Tips'))
         if df_house_tips.empty:
             df_house_tips = pd.DataFrame({})
             df_house_tips['Employee Name'] = df_tipElligible['Employee Name'].unique()
@@ -635,7 +634,7 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
             'Employee Name': st.column_config.TextColumn(disabled=True),
             'House Tip': st.column_config.NumberColumn(format='$%.2f', disabled=False),
         })
-        newdict['House Tips'] = df_house_tips.to_dict()
+        st.session_state['newdict']['House Tips'] = df_house_tips.to_dict()
     with col2:
         df_tipElligible['Tip Rate'] = [pool_rate(x, rates) for x in df_tipElligible['Tip Pool']]
         _df_tips = _add_payroll_summary(df_tipElligible)
@@ -702,21 +701,22 @@ def filter_dataframe(_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def run(file_path: str) -> pd.DataFrame:
-    global dict
-    global newdict
-    try:
-        with open('current_save.csv') as user_file:
-            file_contents = user_file.read()
-        dict = json.loads(file_contents)
-    except Exception:
-        dict = {
-            'Chef Percent': 18.0,
-            'Total Pool': 1567.0,
-            'Garden Pool': 450.0,
-            'Helper Pool': 75,
-            'Num Chefs': 3
-            }
-    newdict = dict.copy()
+    if 'dict' not in st.session_state:
+        try:
+            with open('current_save.csv') as user_file:
+                file_contents = user_file.read()
+            dict = json.loads(file_contents)
+        except Exception:
+            dict = {
+                'Chef Percent': 18.0,
+                'Total Pool': 1567.0,
+                'Garden Pool': 450.0,
+                'Helper Pool': 75,
+                'Num Chefs': 3
+                }
+        st.sessions_state['dict'] = dict
+    if 'newdict' not in st.session_state:
+        st.session_state['newdict'] = st.session_state['dict'].copy()
     _df = read_csv(file_path)
     _df = _clean_import(_df)
     _df = _combine_FullName(_df)
@@ -732,7 +732,7 @@ def run(file_path: str) -> pd.DataFrame:
     
     st.markdown('---')
     if st.button('Save All Input Data'):
-        bitfile = json.dumps(newdict)
+        bitfile = json.dumps(st.session_state['newdict'])
         if True:
             _gitfiles.commit(
                 filename='current_save.csv',

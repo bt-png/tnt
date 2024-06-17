@@ -28,6 +28,7 @@ def clear_save_data():
             st.success('Save Data Has been Saved')
         except Exception:
             st.warning('Something went wrong')
+    st.session_state['dict'] = {}
 
 
 def save_csv():
@@ -69,7 +70,8 @@ def loadFilestoSessionState(files):
                 dataframe[col] = dataframe[col].replace(np.nan, 0)
             st.session_state['df_sales'] = dataframe.copy()
         elif 'Schedule' == dataframe.columns[0]:
-            #dataframe = dataframe.set_index('First Name').transpose()
+            #dataframe = dataframe.transpose()
+            dataframe['Employee Name'] = dataframe['First Name'] + ' ' + dataframe['Last Name']
             st.session_state['df_schedule'] = dataframe.copy()
         elif 'First Name' == dataframe.columns[0]:
             #st.session_state['val'] = file

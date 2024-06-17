@@ -50,27 +50,30 @@ def _combine_FullName(_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def gardenEventsPicker():
-    #dates = st.date_input('Select Garden Event Dates', )
-    dfDates = pd.DataFrame({'Dates': []})
-    dfDates['Dates'] = dfDates['Dates'].astype('datetime64[as]')
-    dfDates = st.data_editor(dfDates, num_rows='dynamic', key='gardendates', column_config={
-        'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
-        })
-    try:
-        dfDates['str'] = ["{:%m/%d/%Y}".format(date) for date in dfDates['Dates']]
-    except:
-        dfDates['str'] = None
-    dfDates['str'] = dfDates['str'].astype(str)
-    df = st.session_state['df_sales']
-    if df is not None:
-        df = df.reset_index()
-        df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
-        tip = round(df['Tip'].sum(),2)
-        st.write(f'Total tips from selected dates from Square = ${tip}')
-        extratip = float(st.text_input('Additional Garden Tips', value=0.0))
-        totaltip = round(tip + extratip,2)
-        st.write(f'Total Garden Tips = ${totaltip}')
-        st.session_state['dict']['Garden Pool'] = totaltip
+    if 'df_sales' in st.session_state:
+        #dates = st.date_input('Select Garden Event Dates', )
+        dfDates = pd.DataFrame({'Dates': []})
+        dfDates['Dates'] = dfDates['Dates'].astype('datetime64[as]')
+        dfDates = st.data_editor(dfDates, num_rows='dynamic', key='gardendates', column_config={
+            'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
+            })
+        try:
+            dfDates['str'] = ["{:%m/%d/%Y}".format(date) for date in dfDates['Dates']]
+        except:
+            dfDates['str'] = None
+        dfDates['str'] = dfDates['str'].astype(str)
+        df = st.session_state['df_sales']
+        if df is not None:
+            df = df.reset_index()
+            df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
+            tip = round(df['Tip'].sum(),2)
+            st.write(f'Total tips from selected dates from Square = ${tip}')
+            extratip = float(st.text_input('Additional Garden Tips', value=0.0))
+            totaltip = round(tip + extratip,2)
+            st.write(f'Total Garden Tips = ${totaltip}')
+            st.session_state['dict']['Garden Pool'] = totaltip
+    else:
+        st.warning('Please upload the Square tip report to select Garden Event dates.')
 
 
 def _add_payroll_summary(_df):

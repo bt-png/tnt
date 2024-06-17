@@ -225,7 +225,7 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
     df = table_color_rows(df)
     df = df.format('${:.2f}', subset=['CALC Tips', 'House Tip', 'Wage', 'Wage + Tip'])
     col1.subheader('Worker Summary')
-    col1.dataframe(df, hide_index=True, height=550, column_order=[
+    col1.dataframe(df, hide_index=True, height=600, column_order=[
         'Employee Name', 'House Tip', 'Hours', 'CALC Tips', 'Wage', 'Wage + Tip'], column_config={
             'Hours': st.column_config.NumberColumn(label='Total Hours'),
             }

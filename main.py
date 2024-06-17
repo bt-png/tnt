@@ -5,7 +5,7 @@ import _gitfiles
 import pandas as pd
 import numpy as np
 from io import StringIO
-Deployed = False
+Deployed = True
 
 dfs = ['df_sales', 'df_schedule', 'df_work_hours']
 
@@ -55,7 +55,6 @@ def loadFilestoSessionState(files):
     for df in dfs:
         if df not in st.session_state:
             st.session_state[df] = None
-    
     for file in files:
         try:
             dataframe = pd.read_csv(file)
@@ -71,7 +70,6 @@ def loadFilestoSessionState(files):
             st.session_state['df_sales'] = dataframe.copy()
         elif 'Schedule' == dataframe.columns[0]:
             #dataframe = dataframe.transpose()
-            dataframe['Employee Name'] = dataframe['First Name'] + ' ' + dataframe['Last Name']
             st.session_state['df_schedule'] = dataframe.copy()
         elif 'First Name' == dataframe.columns[0]:
             #st.session_state['val'] = file
@@ -84,6 +82,21 @@ def writeSessionStateDataFrames():
         st.write(st.session_state[df])
 
 
+def loadTotalTips():
+    df = st.session_state[dfs[0]]
+    st.session_state['dict']['Total Pool'] = round(df['Tip'].sum(),2)
+                                 
+
+def loadShiftsWorked():
+    dataframe = st.session_state['df_schedule']
+    dataframe['Employee Name'] = dataframe['First Name'] + ' ' + dataframe['Last Name']
+    dataframe.drop(columns=['Employee ID', 'Unpaid Breaks', 'Hourly Rate', 'Total', 'Total Hours'], inplace=True)
+    dataframe.replace(0, np.nan, inplace=True)
+    dataframe['Shifts Worked'] = dataframe.count(axis=1, numeric_only=True)
+    dataframe = dataframe.groupby(['Employee Name']).agg({'Shifts Worked': sum})
+    st.session_state['work_shifts'] = dataframe.copy()
+
+
 def allDataFramesLoaded():
     col1, col2 = st.columns([9,1])
     checkSum=0
@@ -93,13 +106,8 @@ def allDataFramesLoaded():
                 loadTotalTips()
             if df == 'df_work_hours':
                 save_csv()
-                #col1.write(f'Data has been loaded for {df}. You may continue to upload more so the' \
-                #    'Garden pool and chef work shifts can be read in, or you may continue and enter manually.')
-                #if col1.button('Continue without loading more documents.'):
-                #    st.session_state['Continue'] = True
-                    #_process.continue_run(st.session_state['df_work_hours'])
             if df == 'df_schedule':
-                st.dataframe(st.session_state[df])
+                loadShiftsWorked()
             checkSum += 1
         else:
             col1.warning(f'Data has not been loaded for {df}')
@@ -107,11 +115,6 @@ def allDataFramesLoaded():
         return True
     return False
 
-
-def loadTotalTips():
-    df = st.session_state[dfs[0]]
-    st.session_state['dict']['Total Pool'] = round(df['Tip'].sum(),2)
-                                 
 
 def run():
     st.set_page_config(

@@ -5,7 +5,7 @@ import numpy as np
 import json
 from datetime import datetime
 
-Deployed = False
+Deployed = True
 
 
 def save_data():
@@ -575,14 +575,23 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         # CHEFS
         with open('Chef_Employees.md', 'r') as f:
             list_chefs = f.read().splitlines()
-        chefs = pd.DataFrame(st.session_state['dict'].get(
-            'Chef Work Shifts',
-            {'Employee Name': list_chefs, 'Shifts Worked': [0 for x in list_chefs], 'Directed': [0.0 for x in list_chefs]}
-            ))
+        if 'work_shifts' in st.session_state:
+            df_tmp = st.session_state['work_shifts']
+            chefs = pd.DataFrame({
+                'Employee Name': list_chefs,
+                'Directed': [0.0 for x in list_chefs]
+                })
+            chefs = pd.merge(left=chefs, left_on='Employee Name', right=df_tmp, right_on='Employee Name', how='left')
+            chefs['Shifts Worked'].fillna(0, inplace=True)
+        else:
+            chefs = pd.DataFrame(st.session_state['dict'].get(
+                'Chef Work Shifts',
+                {'Employee Name': list_chefs, 'Shifts Worked': [0 for x in list_chefs], 'Directed': [0.0 for x in list_chefs]}
+                ))
         chefs = chefs.sort_values(by=['Employee Name'])
         chefs.reset_index(drop=True, inplace=True)
         chefs = table_color_rows(chefs)
-        chefs = col10.data_editor(chefs, column_config={
+        chefs = col10.data_editor(chefs, column_order=['Employee Name', 'Shifts Worked', 'Directed'], column_config={
             'Employee Name': st.column_config.TextColumn('Chefs Name', disabled=True),
             'Directed': st.column_config.NumberColumn(format='$%.2f')
             }, num_rows='fixed', hide_index=True)

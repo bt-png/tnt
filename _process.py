@@ -71,11 +71,11 @@ def gardenEventsPicker():
             extratip = float(st.text_input('Additional Garden Tips', value=0.0))
             totaltip = round(tip + extratip,2)
             st.write(f'Total Garden Tips = ${totaltip}')
-            st.session_state['dict']['Garden Pool'] = totaltip
-            st.session_state['newdict']['Garden Pool'] = st.session_state['dict']['Garden Pool']
-            st.session_state['dict']['Total Pool'] += extratip
-            st.session_state['newdict']['Total Pool'] = st.session_state['dict']['Total Pool']
             if st.button('Apply'):
+                st.session_state['dict']['Garden Pool'] = totaltip
+                st.session_state['newdict']['Garden Pool'] = st.session_state['dict']['Garden Pool']
+                st.session_state['dict']['Total Pool'] += extratip
+                st.session_state['newdict']['Total Pool'] = st.session_state['dict']['Total Pool']
                 st.rerun()
     else:
         st.warning('Please upload the Square tip report to select Garden Event dates.')

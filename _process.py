@@ -632,7 +632,8 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         chef_helper = table_color_rows(chef_helper)
         chef_helper = chef_helper.format('${:.2f}', subset=['Chef Tips', 'Helper Tips', 'Directed'])
         col12.dataframe(chef_helper, column_order=['Employee Name', 'Directed', 'Chef Tips', 'Helper Tips'], hide_index=True)
-    with st.expander('Revise Working Positions', expanded=False):
+    st.subheader('Revise Working Positions')
+    with st.container():
         col10, col11 = st.columns([1, 1])
         grouped = df_tipElligible.groupby(['Employee Name', 'Position']).agg({
             'Employee Name': 'first',

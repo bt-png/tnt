@@ -225,7 +225,7 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
     df = table_color_rows(df)
     df = df.format('${:.2f}', subset=['CALC Tips', 'House Tip', 'Wage', 'Wage + Tip'])
     col1.subheader('Worker Summary')
-    col1.dataframe(df, hide_index=True, column_order=[
+    col1.dataframe(df, hide_index=True, height=550, column_order=[
         'Employee Name', 'House Tip', 'Hours', 'CALC Tips', 'Wage', 'Wage + Tip'], column_config={
             'Hours': st.column_config.NumberColumn(label='Total Hours'),
             }
@@ -275,10 +275,10 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
     })
     tip_summary = table_color_rows(tip_summary)
     col2.dataframe(tip_summary.format({
-        'Total %': '{:.2%}',
-        'FOH': '{:.2%}',
-        'BOH': '{:.2%}',
-        'Other': '{:.2%}'
+        'Total %': '{:.1%}',
+        'FOH': '{:.1%}',
+        'BOH': '{:.1%}',
+        'Other': '{:.1%}'
         }), hide_index=True)
     col2.caption('Garden Other = Garden Host')
     col2.caption('Regular Other = Helpers')

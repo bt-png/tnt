@@ -75,6 +75,8 @@ def gardenEventsPicker():
             st.session_state['newdict']['Garden Pool'] = st.session_state['dict']['Garden Pool']
             st.session_state['dict']['Total Pool'] += extratip
             st.session_state['newdict']['Total Pool'] = st.session_state['dict']['Total Pool']
+            if st.button('Apply'):
+                st.rerun()
     else:
         st.warning('Please upload the Square tip report to select Garden Event dates.')
 

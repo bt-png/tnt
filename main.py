@@ -165,9 +165,16 @@ def run():
         else:
             st.warning('Please make a choice')
     if st.session_state['Continue']:
-        val = 'current_input.csv'
         st.markdown('---')
-        df_tips = _process.run(val)
+        file = 'current_input.csv'
+        try:
+            dataframe = pd.read_csv(file)
+        except:
+            dataframe = pd.read_excel(file)
+        st.session_state['df_work_hours'] = dataframe.copy()
+        _process.continue_run(st.session_state['df_work_hours'])
+        #df_tips = _process.run(val)
+        
 
 if __name__ == '__main__':
     run()

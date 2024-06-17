@@ -72,6 +72,7 @@ def gardenEventsPicker():
             totaltip = round(tip + extratip,2)
             st.write(f'Total Garden Tips = ${totaltip}')
             st.session_state['dict']['Garden Pool'] = totaltip
+            st.session_state['dict']['Total Pool'] += extratip
     else:
         st.warning('Please upload the Square tip report to select Garden Event dates.')
 

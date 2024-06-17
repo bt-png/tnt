@@ -246,6 +246,8 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
             'Directed': st.column_config.NumberColumn(width='small')
         }
     )
+    col2.header('')
+    col2.header('')
     col2.subheader('Tip Summary')
     # Pool Values
     tp = st.session_state['newdict']['Total Pool']

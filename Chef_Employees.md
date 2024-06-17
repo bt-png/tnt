@@ -1,5 +1,5 @@
-Kate
-Jeremiah
-Jason
+Katherine Johnson
+Jeremiah Scott
+Jason Kline
 Wylie
-Lacey
+Lacey Miller-Cahoj

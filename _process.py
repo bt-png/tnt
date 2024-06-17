@@ -3,6 +3,27 @@ import _gitfiles
 import pandas as pd
 import numpy as np
 import json
+from datetime import datetime
+
+Deployed = True
+
+
+def save_data():
+    bitfile = json.dumps(st.session_state['newdict'])
+    if Deployed:
+        _gitfiles.commit(
+            filename='current_save.csv',
+            message='api commit',
+            content=bitfile
+        )
+    else:
+        # Save locally during testing
+        try:
+            with open('current_save.csv', 'w') as file:
+                file.write(bitfile)
+            st.success('Save Data Has been Saved')
+        except Exception:
+            st.warning('Something went wrong')
 
 
 def read_csv(file_path: str) -> pd.DataFrame:
@@ -12,7 +33,10 @@ def read_csv(file_path: str) -> pd.DataFrame:
 
 def _clean_import(_df: pd.DataFrame) -> pd.DataFrame:
     df = _df.copy()
-    df['Paid Total'] = df['Paid Total'].str.replace('$', '', regex=False)
+    try:
+        df['Paid Total'] = df['Paid Total'].str.replace('$', '', regex=False)
+    except Exception:
+        pass
     df['Paid Total'] = df['Paid Total'].astype(float)
     df['Paid Total'] = df['Paid Total'].replace(np.nan, 0)
     return df
@@ -23,6 +47,33 @@ def _combine_FullName(_df: pd.DataFrame) -> pd.DataFrame:
     cols = ['First Name', 'Last Name']
     df['Employee Name'] = df[cols].apply(lambda row: ' '.join(row.values.astype(str)), axis=1)
     return df
+
+
+def gardenEventsPicker():
+    if 'df_sales' in st.session_state:
+        #dates = st.date_input('Select Garden Event Dates', )
+        dfDates = pd.DataFrame({'Dates': []})
+        dfDates['Dates'] = dfDates['Dates'].astype('datetime64[as]')
+        dfDates = st.data_editor(dfDates, num_rows='dynamic', key='gardendates', column_config={
+            'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
+            })
+        try:
+            dfDates['str'] = ["{:%m/%d/%Y}".format(date) for date in dfDates['Dates']]
+        except:
+            dfDates['str'] = None
+        dfDates['str'] = dfDates['str'].astype(str)
+        df = st.session_state['df_sales']
+        if df is not None:
+            df = df.reset_index()
+            df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
+            tip = round(df['Tip'].sum(),2)
+            st.write(f'Total tips from selected dates from Square = ${tip}')
+            extratip = float(st.text_input('Additional Garden Tips', value=0.0))
+            totaltip = round(tip + extratip,2)
+            st.write(f'Total Garden Tips = ${totaltip}')
+            st.session_state['dict']['Garden Pool'] = totaltip
+    else:
+        st.warning('Please upload the Square tip report to select Garden Event dates.')
 
 
 def _add_payroll_summary(_df):
@@ -416,16 +467,16 @@ def _setup_tipping_pools(_df: pd.DataFrame) -> pd.DataFrame:
 
 def _tip_amounts(ukey):
     col40, col41, col42 = st.columns([1, 1, 1])
-    totalPool = float(col40.text_input('Total Pool ($)', value=st.session_state['dict'].get('Total Pool', 0.00), key=ukey+'1'))
+    totalPool = float(col40.text_input('Total Pool ($)', value=st.session_state['dict'].get('Total Pool', 0.01), key=ukey+'1'))
     st.session_state['newdict']['Total Pool'] = totalPool
     tippingPool_Garden = float(col41.text_input('Garden Pool ($)', value=st.session_state['dict'].get('Garden Pool', 0.00), key=ukey+'3'))
     st.session_state['newdict']['Garden Pool'] = tippingPool_Garden
     helperPool = float(col42.text_input("Helper Pool ($)", value=st.session_state['dict'].get('Helper Pool', 0.00), key=ukey+'4'))
-    remaining = float(col40.text_input('Remaining Pool ($)', value=totalPool-tippingPool_Garden-helperPool, disabled=True))
+    remaining = float(col40.text_input('Remaining Pool ($)', value=round(totalPool-tippingPool_Garden-helperPool,2), disabled=True))
     chefPercent = float(col41.number_input('Chef Percentage (%)', value=st.session_state['dict'].get('Chef Percent', 18), key=ukey+'2'))/100
     st.session_state['newdict']['Chef Percent'] = chefPercent*100
     chefCut = float(col41.text_input('Chef Cut ($)', value=round(remaining * chefPercent, 2), disabled=True))
-    tippingPool_Reg = float(col42.text_input('Regular Pool ($)', value=str(totalPool - tippingPool_Garden - helperPool - chefCut), key=ukey+'5', disabled=True))
+    tippingPool_Reg = float(col42.text_input('Regular Pool ($)', value=round(totalPool - tippingPool_Garden - helperPool - chefCut,2), key=ukey+'5', disabled=True))
     st.session_state['newdict']['Helper Pool'] = helperPool
     col1, col2 = st.columns([5,1])
     col1.caption('''
@@ -434,12 +485,7 @@ def _tip_amounts(ukey):
                 ${Regular Pool} = {Remaining Pool} - {Chef Cut}$  
                 ''')
     if col2.button('Save'):
-        bitfile = json.dumps(st.session_state['newdict'])
-        _gitfiles.commit(
-            filename='current_save.csv',
-            message='api commit',
-            content=bitfile
-        )
+        save_data()
     return tippingPool_Garden, tippingPool_Reg, chefCut, helperPool
 
 
@@ -517,12 +563,7 @@ def _adjust_work_pos(_df):
     df_revised = pd.concat([df_revised, df_add, df_remove], ignore_index=True)
     col1, col2 = st.columns([5,1])
     if col2.button('Save', key='positionsave'):
-        bitfile = json.dumps(st.session_state['newdict'])
-        _gitfiles.commit(
-            filename='current_save.csv',
-            message='api commit',
-            content=bitfile
-        )
+        save_data()
     return df_revised, result
 
 
@@ -534,14 +575,23 @@ def _tipping_pools(df_tipElligible, tip_pool_pos) -> pd.DataFrame:
         # CHEFS
         with open('Chef_Employees.md', 'r') as f:
             list_chefs = f.read().splitlines()
-        chefs = pd.DataFrame(st.session_state['dict'].get(
-            'Chef Work Shifts',
-            {'Employee Name': list_chefs, 'Shifts Worked': [0 for x in list_chefs], 'Directed': [0.0 for x in list_chefs]}
-            ))
+        if 'work_shifts' in st.session_state:
+            df_tmp = st.session_state['work_shifts']
+            chefs = pd.DataFrame({
+                'Employee Name': list_chefs,
+                'Directed': [0.0 for x in list_chefs]
+                })
+            chefs = pd.merge(left=chefs, left_on='Employee Name', right=df_tmp, right_on='Employee Name', how='left')
+            chefs['Shifts Worked'].fillna(0, inplace=True)
+        else:
+            chefs = pd.DataFrame(st.session_state['dict'].get(
+                'Chef Work Shifts',
+                {'Employee Name': list_chefs, 'Shifts Worked': [0 for x in list_chefs], 'Directed': [0.0 for x in list_chefs]}
+                ))
         chefs = chefs.sort_values(by=['Employee Name'])
         chefs.reset_index(drop=True, inplace=True)
         chefs = table_color_rows(chefs)
-        chefs = col10.data_editor(chefs, column_config={
+        chefs = col10.data_editor(chefs, column_order=['Employee Name', 'Shifts Worked', 'Directed'], column_config={
             'Employee Name': st.column_config.TextColumn('Chefs Name', disabled=True),
             'Directed': st.column_config.NumberColumn(format='$%.2f')
             }, num_rows='fixed', hide_index=True)
@@ -700,7 +750,7 @@ def filter_dataframe(_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def run(file_path: str) -> pd.DataFrame:
+def continue_run(_df):
     if 'dict' not in st.session_state:
         try:
             with open('current_save.csv') as user_file:
@@ -717,12 +767,12 @@ def run(file_path: str) -> pd.DataFrame:
         st.session_state['dict'] = dict
     if 'newdict' not in st.session_state:
         st.session_state['newdict'] = st.session_state['dict'].copy()
-    _df = read_csv(file_path)
     _df = _clean_import(_df)
     _df = _combine_FullName(_df)
-    tab1, tab2, tab3, tab4 = st.tabs(['Original Data', 'Tipping Rules', 'Tipping Pool', 'Payroll Summary'])
+    tab1, tab2, tab3, tab4 = st.tabs(['Garden Events', 'Tipping Rules', 'Tipping Pool', 'Payroll Summary'])
     with tab1:
-        filter_dataframe(_df)
+        #filter_dataframe(_df)
+        gardenEventsPicker()
     with tab2:
         df_tipElligible, tip_pool_pos = _setup_tipping_pools(_df)
     with tab3:
@@ -732,19 +782,9 @@ def run(file_path: str) -> pd.DataFrame:
     
     st.markdown('---')
     if st.button('Save All Input Data'):
-        bitfile = json.dumps(st.session_state['newdict'])
-        if True:
-            _gitfiles.commit(
-                filename='current_save.csv',
-                message='api commit',
-                content=bitfile
-            )
-        else:
-            # Save locally during testing
-            try:
-                with open('current_save.csv', 'w') as file:
-                    file.write(bitfile)
-                st.success('Saved')
-            except Exception:
-                st.warning('Something went wrong')
+        save_data()
     return df_tips_agg
+
+def run(file_path: str) -> pd.DataFrame:
+    _df = read_csv(file_path)
+    return continue_run(_df)

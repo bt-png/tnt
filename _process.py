@@ -226,7 +226,7 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
     df = df.format('${:.2f}', subset=['CALC Tips', 'House Tip', 'Wage', 'Wage + Tip'])
     col1.subheader('Worker Summary')
     col1.dataframe(df, hide_index=True, height=600, column_order=[
-        'Employee Name', 'House Tip', 'Hours', 'CALC Tips', 'Wage', 'Wage + Tip'], column_config={
+        'Employee Name', 'Hours', 'House Tip', 'CALC Tips', 'Wage + Tip'], column_config={
             'Hours': st.column_config.NumberColumn(label='Total Hours'),
             }
     )
@@ -267,14 +267,22 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
     rem_percent = 1-helper_percent
     r_foh = rem_percent*st.session_state['newdict']['Regular FOH']/100
     r_boh = 1-r_foh-helper_percent
-
-    tip_summary = pd.DataFrame({
-        'Cuts': ['Garden', 'Regular', 'Chefs'],
-        'Total %': [gp/tp, rp/tp, cc/tp],
-        'FOH': [g_foh, r_foh, None],
-        'BOH': [g_boh, r_boh, None],
-        'Other': [g_h, helper_percent, None]
-    })
+    if gp > 0:
+        tip_summary = pd.DataFrame({
+            'Cuts': ['Garden', 'Regular', 'Chefs'],
+            'Total %': [gp/tp, rp/tp, cc/tp],
+            'FOH': [g_foh, r_foh, None],
+            'BOH': [g_boh, r_boh, None],
+            'Other': [g_h, helper_percent, None]
+        })
+    else:
+        tip_summary = pd.DataFrame({
+            'Cuts': ['Regular', 'Chefs'],
+            'Total %': [rp/tp, cc/tp],
+            'FOH': [r_foh, None],
+            'BOH': [r_boh, None],
+            'Other': [helper_percent, None]
+        })
     tip_summary = table_color_rows(tip_summary)
     col2.dataframe(tip_summary.format({
         'Total %': '{:.1%}',
@@ -282,7 +290,8 @@ def display_payroll_summary_House(_df, _dfchefs, _adj_result):
         'BOH': '{:.1%}',
         'Other': '{:.1%}'
         }), hide_index=True)
-    col2.caption('Garden Other = Garden Host')
+    if gp > 0:
+        col2.caption('Garden Other = Garden Host')
     col2.caption('Regular Other = Helpers')
     st.markdown('---')
     st.subheader('Revised Work Shifts')

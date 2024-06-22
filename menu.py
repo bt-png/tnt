@@ -9,7 +9,7 @@ def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.header('Hello ' + st.session_state.user_info + '!')
     st.sidebar.markdown('---')
-    st.sidebar.page_link("app.py", label="Home")
+    st.sidebar.page_link("main.py", label="Home")
     if st.session_state['username'] in st.secrets['admin_user']:
         st.sidebar.page_link("pages/admin.py", label="Administration")
     st.sidebar.markdown('---')
@@ -48,7 +48,7 @@ def authenticated_menu():
 
 def unauthenticated_menu():
     # Show a navigation menu for unauthenticated users
-    st.sidebar.page_link("app.py", label="Log in")
+    st.sidebar.page_link("main.py", label="Log in")
 
 
 def menu():
@@ -64,5 +64,5 @@ def menu_with_redirect():
     # Redirect users to the main page if not logged in, otherwise continue to
     # render the navigation menu
     if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] is None:
-        st.switch_page("app.py")
+        st.switch_page("main.py")
     menu()

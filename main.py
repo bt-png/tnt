@@ -1,178 +1,104 @@
 import streamlit as st
-import json
-import _process
-import _gitfiles
-import pandas as pd
-import numpy as np
-from io import StringIO
-Deployed = True
-
-dfs = ['df_sales', 'df_schedule', 'df_work_hours']
+import streamlit_authentication as st_auth
+from firestore import openconfig
+from firestore import userAssociatedCompanies
+from company import cpmain
+from menu import menu
+from style import apply_css
 
 
-def clear_save_data():
-    st.session_state['newdict'] = {}
-    bitfile = json.dumps(st.session_state['newdict'])
-    if Deployed:
-        # Delete existing save data
-        _gitfiles.commit(
-            filename='current_save.csv',
-            message='reset new csv',
-            content=bitfile
-        )
-    else:
-        # Save locally during testing
-        try:
-            with open('current_save.csv', 'w') as file:
-                file.write(bitfile)
-            st.success('Save Data Has been Saved')
-        except Exception:
-            st.warning('Something went wrong')
-    st.session_state['dict'] = {}
-
-
-def save_csv():
-    df = st.session_state['df_work_hours']
-    bitfile = df.to_csv()
-    #st.write(bitfile)
-    if Deployed:
-        _gitfiles.commit(
-            filename='current_input.csv',
-            message='api commit',
-            content=bitfile
-        )
-    else:
-        # Save locally during testing
-        try:
-            with open('current_input.csv', 'w') as file:
-                file.write(bitfile)
-            st.success('Work Hours CSV has been Saved')
-        except Exception:
-            st.warning('Something went wrong')
-
-
-def loadFilestoSessionState(files):
-    for df in dfs:
-        if df not in st.session_state:
-            st.session_state[df] = None
-    for file in files:
-        try:
-            dataframe = pd.read_csv(file)
-        except:
-            dataframe = pd.read_excel(file)
-        if 'Sales' == dataframe.columns[0]:
-            dataframe = dataframe.set_index('Sales').transpose()
-            for col in dataframe.columns:
-                dataframe[col] = dataframe[col].str.replace('$', '', regex=False)
-                dataframe[col] = dataframe[col].str.replace(',', '', regex=False)
-                dataframe[col] = dataframe[col].astype(float)
-                dataframe[col] = dataframe[col].replace(np.nan, 0)
-            st.session_state['df_sales'] = dataframe.copy()
-        elif 'Schedule' == dataframe.columns[0]:
-            #dataframe = dataframe.transpose()
-            st.session_state['df_schedule'] = dataframe.copy()
-        elif 'First Name' == dataframe.columns[0]:
-            #st.session_state['val'] = file
-            st.session_state['df_work_hours'] = dataframe.copy()
-            
-
-def writeSessionStateDataFrames():
-    for df in dfs:
-        st.write(f'Loaded data for {df}')
-        st.write(st.session_state[df])
-
-
-def loadTotalTips():
-    df = st.session_state[dfs[0]]
-    st.session_state['dict']['Total Pool'] = round(df['Tip'].sum(),2)
-                                 
-
-def loadShiftsWorked():
-    dataframe = st.session_state['df_schedule']
-    dataframe['Employee Name'] = dataframe['First Name'] + ' ' + dataframe['Last Name']
-    dataframe.drop(columns=['Employee ID', 'Unpaid Breaks', 'Hourly Rate', 'Total', 'Total Hours'], inplace=True)
-    dataframe.replace(0, np.nan, inplace=True)
-    dataframe['Shifts Worked'] = dataframe.count(axis=1, numeric_only=True)
-    dataframe = dataframe.groupby(['Employee Name']).agg({'Shifts Worked': sum})
-    st.session_state['work_shifts'] = dataframe.copy()
-
-
-def allDataFramesLoaded():
-    col1, col2 = st.columns([9,1])
-    checkSum=0
-    for df in dfs:
-        if st.session_state[df] is not None:
-            if df == 'df_sales':
-                loadTotalTips()
-            if df == 'df_work_hours':
-                save_csv()
-            if df == 'df_schedule':
-                loadShiftsWorked()
-            checkSum += 1
+def selectCompany():
+    clist = userAssociatedCompanies(st.session_state['username'])
+    if len(clist) == 1:
+        cpmain(clist[0])
+    elif len(clist) > 1:
+        clist = list(clist)
+        clist.insert(0, '')
+        chosen = st.selectbox('Please Select a Company', options=clist, index=clist.index(st.session_state['company']))
+        if len(chosen) > 0:
+            cpmain(chosen)
         else:
-            col1.warning(f'Data has not been loaded for {df}')
-    if checkSum == len(dfs):
-        return True
-    return False
+            st.session_state['company'] = ''
+    else:
+        st.session_state['company'] = ''
+        st.write('Please contact support. Your username (',
+                 st.session_state['username'],
+                 ') is not associated with any companies!')
 
 
-def run():
-    st.set_page_config(
-        page_title='TNT Consulting',
-        layout='wide'
-    )
-    if 'Continue' not in st.session_state:
-        st.session_state['Continue'] = False
-    choice = st.selectbox(label='Upload new files, or continue from a save?', options=['Upload', 'Continue'], placeholder='Select...', index=1)
-    st.write('Hello')
-    with st.container():
-        col1, col2 = st.columns([9,1])
-        if choice == 'Upload':
-            if col2.button('Clear Save Data'):
-                clear_save_data()
-            st.session_state['Continue'] = False
-            val = None #col1.file_uploader('Upload CSV', type={'csv'}, accept_multiple_files=False)
-            files = col1.file_uploader('Upload Files', type=['csv', 'xlsx'], accept_multiple_files=True)
-            if files is not None:
-                loadFilestoSessionState(files)
-                if allDataFramesLoaded():
-                    st.session_state['Continue'] = True
-                    _process.continue_run(st.session_state['df_work_hours'])
-            if val is not None:
-                # Delete existing save data
-                newdict = {}
-                bitfile = json.dumps(newdict)
-                _gitfiles.commit(
-                    filename='current_save.csv',
-                    message='reset new csv',
-                    content=bitfile
-                )
-                col2.header('')
-                col2.header('')
-                if col2.button('Save CSV'):
-                    bitfile = val.getvalue()
-                    _gitfiles.commit(
-                        filename='current_input.csv',
-                        message='api commit',
-                        content=bitfile
-                    )                       
-        elif choice == 'Continue':
-            if st.session_state['Continue']:
-                st.markdown('---')
-                file = 'current_input.csv'
-                try:
-                    dataframe = pd.read_csv(file)
-                except:
-                    dataframe = pd.read_excel(file)
-                st.session_state['df_work_hours'] = dataframe.copy()
-                _process.continue_run(st.session_state['df_work_hours'])
-                #df_tips = _process.run(val)
-            else:
-                st.session_state['Continue'] = True
-                st.rerun()
+def updateUser():
+    st.markdown('---')
+    with st.expander('Update Your Profile', expanded=False):
+        st_auth.resetpassword(st.session_state['auth'], st.session_state['config'])
+        st_auth.updateuser(st.session_state['auth'], st.session_state['config'])
+
+
+def loginstatus():
+    do_you_have_an_account = st.empty()
+    do_you_have_an_account = st.selectbox(
+        label='Start here',
+        options=('Sign in', 'Sign up', 'I forgot my password', 'I forgot my username'), key='mainone'
+        )
+    if do_you_have_an_account == 'Sign in':
+        user, status, username = st_auth.login(auth)
+    elif do_you_have_an_account == 'Sign up':
+        email, username, user = st_auth.register(auth, config)
+    elif do_you_have_an_account == 'I forgot my password':
+        username, email, new_random_password = st_auth.forgotpassword(auth, config)
+    elif do_you_have_an_account == 'I forgot my username':
+        username, email = st_auth.forgotusername(auth)
+    if 'authentication_status' in st.session_state:
+        if st.session_state['authentication_status']:
+            st.session_state.user_info = user
+            st.rerun()
+        elif st.session_state['authentication_status'] is False:
+            st.sidebar.error('Username/password is incorrect')
+        elif st.session_state['authentication_status'] is None and do_you_have_an_account == 'Sign in':
+            st.sidebar.warning('Please enter your username and password')
+
+
+def set_role():
+    # Callback function to save the role selection to Session State
+    st.session_state.role = st.session_state._role
+
+
+def home():
+    # Launch Page - Not Logged in
+    st.header('Payroll Tipping Portal')
+    st.write('provided by, TNT Consulting.')
+    if 'user_info' not in st.session_state:
+        loginstatus()
+    else:
+        if st.session_state['authentication_status'] is None:
+            # Logged out
+            st.session_state.clear()
+            st.rerun()
         else:
-            st.warning('Please make a choice')
+            selectCompany()
+            updateUser()
+    menu()  # Render the dynamic menu!
+    # st.selectbox(
+    #     "Select your role:",
+    #     [None, "user", "admin", "super-admin"],
+    #     key="_role",
+    #     on_change=set_role,
+    # )
 
 
 if __name__ == '__main__':
-    run()
+    st.set_page_config(
+        page_title='TNT Consulting',
+        # page_icon='🚊',
+        layout='wide'
+    )
+    apply_css()
+    config = openconfig()
+    st.session_state['config'] = config
+    auth = st_auth.authenticate(config)
+    st.session_state['auth'] = auth
+    # # Initialize st.session_state.role to None
+    if 'company' not in st.session_state:
+        st.session_state['company'] = ''
+    # # Retrieve the role from Session State to initialize the widget
+    # st.session_state._role = st.session_state.role
+    home()

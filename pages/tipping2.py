@@ -138,7 +138,7 @@ def position_to_pool(position: str):
         pospool = data['Tip Pool'][idx]
         pool = tippools()[pospool]
     else:
-        pool = 'Position Not Elligible'
+        pool = 'Position Not Eligible'
     return pool
 
 
@@ -159,7 +159,7 @@ def tipPoolPositions():
         'Position': st.column_config.TextColumn(disabled=True)
     })
     # syncDataEditor(edited_data, 'position_pool')
-    pospool = edited_data[edited_data['Tip Pool'] != 'Position Not Elligible']
+    pospool = edited_data[edited_data['Tip Pool'] != 'Position Not Eligible']
     pospool.reset_index(drop=True, inplace=True)
     pool = [tippools().index(x) for x in pospool['Tip Pool']]
     pos = pospool['Position'].to_list()
@@ -179,7 +179,7 @@ def helperPool():
         st.session_state['tipdata']['helperEmployeeNamepool'] = []
     pool = st.multiselect(
                     "#### Helper Pool Employees",
-                    st.session_state['tipdata']['Tip Elligible Employees'],
+                    st.session_state['tipdata']['Tip Eligible Employees'],
                     default=st.session_state['tipdata']['helperEmployeeNamepool'], placeholder='Select Employees to add to the Helper Pool',
                     key='helperpoolemployees', on_change=syncInput, args=('helperpoolemployees', 'helperEmployeeNamepool')
                 )
@@ -219,8 +219,9 @@ def removeHelperPools():
             # for idx, row in df_hrs.iterrows():
             #     if row['Employee Name'] in removeHelpers:
             #         df_hrs.drop(idx, inplace=True)
-            for name in removeHelpers:
-                df_hrs.drop(df_hrs.index[df_hrs['Employee Name'] == name], inplace=True)
+            # for name in removeHelpers:
+            #     df_hrs.drop(df_hrs.index[df_hrs['Employee Name'] == name], inplace=True)
+            df_hrs['Tip Pool'] = ['Helper Not Eligible' if name in removeHelpers else exist for name, exist in zip(df_hrs['Employee Name'], df_hrs['Tip Pool'])]
             # st.session_state['tipdata']['WorkedHoursDataUsedForTipping'] = df_hrs
             syncDataEditor(df_hrs, 'WorkedHoursDataUsedForTipping')
 
@@ -496,7 +497,7 @@ def TipsSum():
                  column_order=['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips'],
                  column_config=config)
     if removeNA:
-        st.caption('Positions where the \'Tip Pool\' is \'Position Not Elligible\' have been removed from this summary.')
+        st.caption('Positions where the \'Tip Pool\' is \'Position Not Eligible\' have been removed from this summary.')
 
 
 def ByPosition():
@@ -504,9 +505,9 @@ def ByPosition():
     removeNA = False
     df = st.session_state['tipdata']['WorkedHoursDataUsedForTipping'].copy()
     if removeNA:
-        df['Tip Pool'] = df['Tip Pool'].replace('Position Not Elligible', None)
+        df['Tip Pool'] = df['Tip Pool'].replace('Position Not Eligible', None)
     else:
-        df['Tip Pool'] = df['Tip Pool'].replace('Position Not Elligible', 'NA')
+        df['Tip Pool'] = df['Tip Pool'].replace('Position Not Eligible', 'NA')
     df = df.groupby(['Employee Name', 'Position', 'Tip Pool']).agg({
         'Regular': 'sum',
         'Pool Tip': 'sum',
@@ -523,7 +524,7 @@ def ByPosition():
                  column_order=['Employee Name', 'Position', 'Regular', 'Tip Pool', 'Pool Tip'],
                  column_config=config)
     if removeNA:
-        st.caption('Positions where the \'Tip Pool\' is \'Position Not Elligible\' have been removed from this summary.')
+        st.caption('Positions where the \'Tip Pool\' is \'Position Not Eligible\' have been removed from this summary.')
 
 
 def TipChangeSummary():
@@ -570,7 +571,7 @@ def applyTipRatestoHoursWorked():
         df.drop('Pool Tip', axis=1, inplace=True)
         df.drop('Regular Tips', axis=1, inplace=True)
         df.drop('Garden Tips', axis=1, inplace=True)
-    df.insert(4, 'Tip Pool Rate', [tiprates[pool] if pool != 'Position Not Elligible' else 0 for pool in df['Tip Pool']])
+    df.insert(4, 'Tip Pool Rate', [tiprates[pool] if (pool not in ['Position Not Eligible', 'Helper Not Eligible']) else 0 for pool in df['Tip Pool']])
     df.insert(4, 'Pool Tip', [rate * hrs for rate, hrs in zip(df['Tip Pool Rate'], df['Regular'])])
     df.insert(4, 'Regular Tips', [tip if (pool in tippools()[3:5]) else 0 for tip, pool in zip(df['Pool Tip'], df['Tip Pool'])])
     df.insert(4, 'Garden Tips', [tip if (pool in tippools()[0:3]) else 0 for tip, pool in zip(df['Pool Tip'], df['Tip Pool'])])

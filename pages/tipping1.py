@@ -1,4 +1,5 @@
 import streamlit as st
+import numpy as np
 import pandas as pd
 from menu import menu_with_redirect
 from company import publish
@@ -9,7 +10,8 @@ from sync import syncInput
 from sync import syncDataEditor
 
 
-def tipInelligible():
+def tipIneligible():
+    chefs = clientGetValue(st.session_state['company'], 'chefs')
     df = st.session_state['tipdata']['df_work_hours'].copy()
     if 'Tip Exempt Employees' in st.session_state['tipdata']:
         exempt = st.session_state['tipdata']['Tip Exempt Employees']
@@ -19,31 +21,33 @@ def tipInelligible():
         exempt = set(exempt).intersection(st.session_state['tipdata']['Employees Worked'])
     if len(exempt) == 0:
         exempt = None
+    options = np.setdiff1d(st.session_state['tipdata']['Employees Worked'], chefs)
     col20, col21, col22, col23 = st.columns([1, .1, 1, .1])
     try:
         user_not_tipped = col20.multiselect(
-                    "Employee's with job classification not elligible for tips",
-                    st.session_state['tipdata']['Employees Worked'],
+                    "Employee's with job classification not eligible for tips",
+                    options,
                     default=exempt,
                     key='exempt1', on_change=syncInput, args=('exempt1', 'Tip Exempt Employees')
                 )
     except Exception:
         st.error('All names within "Tip_Exempt_Employees.md" must match')
         user_not_tipped = col20.multiselect(
-                    "Employee's with job classification not elligible for tips",
+                    "Employee's with job classification not eligible for tips",
                     st.session_state['tipdata']['Employees Worked'],
                     key='exempt2', on_change=syncInput, args=('exempt2', 'Tip Exempt Employees')
                     )
-    df_tipElligible = df[~df['Employee Name'].isin(user_not_tipped)].copy()
-    df_tipInElligible = df[df['Employee Name'].isin(user_not_tipped)].copy()
-    st.session_state['tipdata']['Tip Elligible Employees'] = df_tipElligible['Employee Name'].unique()
-    st.session_state['tipdata']['ORIGINAL_WorkedHoursDataUsedForTipping'] = df_tipElligible.copy()
-    # st.session_state['tipdata']['WorkedHoursDataUsedForTipping'] = df_tipElligible.copy()
+    user_not_tipped = user_not_tipped + chefs
+    df_tipEligible = df[~df['Employee Name'].isin(user_not_tipped)].copy()
+    df_tipInEligible = df[df['Employee Name'].isin(user_not_tipped)].copy()
+    st.session_state['tipdata']['Tip Eligible Employees'] = df_tipEligible['Employee Name'].unique()
+    st.session_state['tipdata']['ORIGINAL_WorkedHoursDataUsedForTipping'] = df_tipEligible.copy()
+    # st.session_state['tipdata']['WorkedHoursDataUsedForTipping'] = df_tipEligible.copy()
     # st.session_state['tipdata']['Tip Exempt Employees'] = user_not_tipped
-    col22.caption('Tip Elligible Employees')
+    col22.caption('Tip Eligible Employees')
     with col22:
         _str = ' | '
-        for names in st.session_state['tipdata']['Tip Elligible Employees']:
+        for names in st.session_state['tipdata']['Tip Eligible Employees']:
             _str += names + ' | '
         st.write(_str)
 
@@ -106,7 +110,7 @@ def run():
     if 'df_work_hours' in st.session_state['tipdata']:
         st.markdown('---')
         st.markdown('### Exclude Employees')
-        tipInelligible()
+        tipIneligible()
         st.markdown('### Chef Pool Shifts')
         chefsPool()
         # st.write(st.session_state['tipdata'])

@@ -104,8 +104,8 @@ def tipPercents():
     # if dictionary != st.session_state['tipdata']['tippoolpercents']:
     #     updated()
     # st.session_state['tipdata']['tippoolpercents'] = dictionary
-    gardenpool = st.session_state['tipdata']['tippool']['Garden']
-    regularpool = st.session_state['tipdata']['tippool']['Regular']
+    gardenpool = st.session_state['tipdata']['Avail Event Tip']
+    regularpool = st.session_state['tipdata']['Avail Regular Pool']
     gardensplit = [
         round(gardenpool * vals[0]/100, 2),
         round(gardenpool * vals[1]/100, 2)
@@ -171,40 +171,6 @@ def tipPoolPositions():
         updated()
         st.session_state['tipdata']['position_pool'] = dictionary
     # st.write(pool + default['Tip Pool'])
-
-
-def helperPool():
-    # st.markdown('#### Helper Pool Employees')
-    if 'helperEmployeeNamepool' not in st.session_state['tipdata']:
-        st.session_state['tipdata']['helperEmployeeNamepool'] = []
-    pool = st.multiselect(
-                    "#### Helper Pool Employees",
-                    st.session_state['tipdata']['Tip Eligible Employees'],
-                    default=st.session_state['tipdata']['helperEmployeeNamepool'], placeholder='Select Employees to add to the Helper Pool',
-                    key='helperpoolemployees', on_change=syncInput, args=('helperpoolemployees', 'helperEmployeeNamepool')
-                )
-    if 'Helper Pool Employees' in st.session_state['tipdata']:
-        df = st.session_state['tipdata']['Helper Pool Employees']
-        for idx, row in df.iterrows():
-            if row['Employee Name'] not in pool:
-                df.drop(idx, inplace=True)
-        for name in pool:
-            if name not in df['Employee Name'].to_list():
-                df.loc[len(df.index)] = [name, True]
-    else:
-        df = pd.DataFrame({
-            'Employee Name': pool,
-            'Remain in Tip Pool': [True for x in pool]
-            })
-    st.session_state['tipdata']['Helper Pool Employees'] = df.copy()
-    if len(st.session_state['tipdata']['Helper Pool Employees']) > 0:
-        st.write('')
-        edited_data = st.data_editor(st.session_state['tipdata']['Helper Pool Employees'], hide_index=True, num_rows='fixed', column_config={
-                'Employee Name': st.column_config.TextColumn(disabled=True),
-                'Remain in Tip Pool': st.column_config.CheckboxColumn()
-                }
-            )
-        syncDataEditor(edited_data, 'Helper Pool Employees')
 
 
 def removeHelperPools():
@@ -273,6 +239,11 @@ def tipDisplaySummary():
 
 def tipPercentsSummary():
     rerun = True if 'tippoolhourlyrates' not in st.session_state['tipdata'] else False
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        st.markdown(f"#### Event Days Available Tip Pool = ${st.session_state['tipdata']['Avail Event Tip']}")
+    with col2:
+        st.markdown(f"#### Regular Days Available Tip Pool = ${st.session_state['tipdata']['Avail Regular Pool']}")
     tipPercents()
     tipPoolSumHRS()
     tipDisplaySummary()
@@ -314,6 +285,8 @@ def applyDefaultSplits():
     else:
         data = pd.DataFrame.from_dict(clientGetValue(st.session_state['company'], 'positionsplits'))
     df_revised = st.session_state['tipdata']['ORIGINAL_WorkedHoursDataUsedForTipping'].copy()
+    df_revised.drop(['OT', 'Double OT'], axis=1, inplace=True)
+    df_revised.drop(df_revised[df_revised['Regular'].isnull()].index, inplace=True)
     if len(data) > 0:
         df_app = df_revised[df_revised['Position'].isin(data['from'])][['Employee Name', 'Regular', 'Position']]
         df_revised['reason'] = ''
@@ -472,7 +445,7 @@ def TipsSum():
     dfhouse = st.session_state['tipdata']['housetipsforemployees']
     df = pd.merge(left=df, left_on='Employee Name', right=dfhouse, right_on=['Employee Name'], how='inner')
     dfhelper = st.session_state['tipdata']['Helper Pool Employees']
-    HelperPool = st.session_state['tipdata']['tippool']['Helper']
+    HelperPool = st.session_state['tipdata'].get('Helper Pool', 0.0)
     if len(dfhelper) > 0 and HelperPool > 0:
         df['Helper Tips'] = [HelperPool/len(dfhelper) if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
     else:
@@ -538,11 +511,18 @@ def TipChangeSummary():
     df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
     df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
     df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
+    # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
+    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
+    if df['House Tip'].sum() == 0:
+        order.remove('House Tip')
+        order.remove('House Tip %')
+        order.remove('% Change')
     # df['% Change'] = [x if x != np.inf else 0 for x in df['% Change']]
     # df['% Change'] = df['% Change'].fillna(0)
     df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tips'])
     df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
     df = df.format('{:.2f}', subset=['Regular'])
+    
     config = {
         'Employee Name': st.column_config.TextColumn(),
         'Regular': st.column_config.NumberColumn('Total Hours', format='%.2f'),
@@ -553,9 +533,7 @@ def TipChangeSummary():
         }
     # df_tips_agg_p = df_tips_agg_p.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tip'])
     # df_tips_agg_p = df_tips_agg_p.format('{:.0f}%', subset=['Assigned Tip %', 'House Tip %', '% Change'])
-    st.dataframe(df, hide_index=True, column_config=config,
-                 column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
-                )
+    st.dataframe(df, hide_index=True, column_config=config, column_order=order)
 
 
 def applyTipRatestoHoursWorked():
@@ -592,17 +570,17 @@ def run():
         publishbutton = st.empty()
     if 'df_work_hours' in st.session_state['tipdata']:
         if 'ORIGINAL_WorkedHoursDataUsedForTipping' not in st.session_state['tipdata']:
-            st.write('You must first visit the \'Eligibility\' page.')
+            st.write('You must first visit the \'Distribution\' page.')
         else:
-            st.markdown('---')
-            st.markdown('### Tip Pools & Distribution Percentages')
-            tipAmounts()
+            # st.markdown('---')
+            # st.markdown('### Tip Pools & Distribution Percentages')
+            # tipAmounts()
             st.markdown('---')
             col1, col2 = st.columns([1, 1])
             with col1:
                 tipPoolPositions()
-            with col2:
-                helperPool()
+            # with col2:
+                
             st.markdown('---')
             tipsummary_container = st.container()
             st.markdown('---')
@@ -645,7 +623,7 @@ if __name__ == '__main__':
         layout='wide'
     )
     if 'company' not in st.session_state:
-        st.switch_page("app.py")
+        st.switch_page("main.py")
     apply_css()
     run()
     menu_with_redirect()

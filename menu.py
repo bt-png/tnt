@@ -16,8 +16,8 @@ def authenticated_menu():
     if len(st.session_state['company']) > 0:
         st.sidebar.header(st.session_state['company'])
         st.sidebar.page_link('pages/tipping0.py', label='Import Data')  #, icon='💣')
-        st.sidebar.page_link("pages/tipping1.py", label="a. Eligibility")
-        st.sidebar.page_link("pages/tipping2.py", label="b. Distribution")
+        st.sidebar.page_link("pages/tipping1.py", label="a. Distribution")
+        st.sidebar.page_link("pages/tipping2.py", label="b. Eligibility")
         st.sidebar.page_link("pages/tipping3.py", label="c. Summary")
         
         if st.session_state['updatedsomething']:

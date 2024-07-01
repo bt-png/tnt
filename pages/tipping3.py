@@ -15,7 +15,7 @@ def run():
         st.header(st.session_state['company'])
     if 'df_work_hours' in st.session_state['tipdata']:
         if 'WorkedHoursDataUsedForTipping' not in st.session_state['tipdata']:
-            st.write('You must first visit the \'Distribution\' page.')
+            st.write('You must first visit the \'Eligibility\' page.')
         else:
             st.markdown('---')
             st.markdown('### Owner Summary')
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         layout='wide'
     )
     if 'company' not in st.session_state:
-        st.switch_page("app.py")
+        st.switch_page("main.py")
     apply_css()
     run()
     menu_with_redirect()

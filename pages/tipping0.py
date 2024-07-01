@@ -185,6 +185,15 @@ def gardenDatesPicker():
     # st.write(st.session_state['tipdata']['GardenDates'])
     if not dfDates.equals(st.session_state['tipdata']['GardenDates']):
         st.session_state['tipdata']['Base Garden Tip'] = tip
+    # if 'Event Tip' not in st.session_state['tipdata']:
+    # baseGardenTip = st.session_state['tipdata'].get('Base Garden Tip', 0.00)
+    # extraGardenTip = st.session_state['tipdata'].get('Extra Garden Tip', 0.00)
+    eventTip = tip + extratip
+    st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
+    # if 'Regular Pool' not in st.session_state['tipdata']:
+    totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
+    baseRegularTip = totalTip - tip
+    st.session_state['tipdata']['Regular Pool'] = round(baseRegularTip, 2)
 
 
 def upload():
@@ -282,7 +291,7 @@ if __name__ == '__main__':
         layout='wide'
     )
     if 'company' not in st.session_state:
-        st.switch_page("app.py")
+        st.switch_page("main.py")
     apply_css()
     if 'tipdata' not in st.session_state:
         # st.session_state['tipdata'] = {}

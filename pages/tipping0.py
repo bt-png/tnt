@@ -178,6 +178,12 @@ def gardenDatesPicker():
         key='extragardentips',
         on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
         ))
+     serviceadjustment = float(st.text_input(
+        'Service Charge Adjustment',
+        value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
+        key='serviceadjustment',
+        on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
+        ))
     # if extratip != st.session_state['tipdata']['Extra Garden Tip']:
     #     warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
     #     st.session_state['tipdata']['Extra Garden Tip'] = extratip
@@ -192,7 +198,7 @@ def gardenDatesPicker():
     st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
     # if 'Regular Pool' not in st.session_state['tipdata']:
     totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
-    baseRegularTip = totalTip - tip
+    baseRegularTip = totalTip - tip + serviceadjustment
     st.session_state['tipdata']['Regular Pool'] = round(baseRegularTip, 2)
 
 

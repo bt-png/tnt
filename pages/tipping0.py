@@ -197,8 +197,11 @@ def gardenDatesPicker():
     eventTip = tip + extratip
     st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
     # if 'Regular Pool' not in st.session_state['tipdata']:
-    totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
-    baseRegularTip = totalTip - tip + serviceadjustment
+    dfSales = st.session_state['tipdata']['df_sales']
+    totalTip = round(dfSales['Tip'].sum() + serviceadjustment, 2)
+    st.session_state['tipdata']['Total Pool'] = totalTip
+    # totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
+    baseRegularTip = totalTip - tip
     st.session_state['tipdata']['Regular Pool'] = round(baseRegularTip, 2)
 
 

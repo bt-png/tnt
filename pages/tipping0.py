@@ -179,8 +179,8 @@ def gardenDatesPicker():
         on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
         ))
     serviceadjustment = float(st.text_input(
-        'Service Charge Adjustment',
-        value=st.session_state['tipdata'].get('Service Charge Adjustment (+/-)', 0.0),
+        'Service Charge Adjustment (+/-)',
+        value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
         key='serviceadjustment',
         on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
         ))

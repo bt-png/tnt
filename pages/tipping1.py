@@ -125,6 +125,8 @@ def chefsPool():
 
 
 def helperPool():
+    if 'Helper Pool' not in st.session_state['tipdata']:
+        st.session_state['tipdata']['Helper Pool'] = 0.00
     col1, col2 = st.columns([1,1])
     with col1:
         # st.markdown('#### Helper Pool Employees')

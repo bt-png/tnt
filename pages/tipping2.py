@@ -67,12 +67,13 @@ def tipAmounts():
 
 def tipPercents():
     ukey = 'tippools'
-    # if 'tippoolpercents' not in st.session_state['tipdata']:
-    split_vals = [70, 15, None, 66, None]  # Update to read from Company Defaults
-    #     dictionary = dict(zip(tippools(), split_vals))
-    st.session_state['tipdata']['tippool_g1'] = split_vals[0]
-    st.session_state['tipdata']['tippool_g2'] = split_vals[1]
-    st.session_state['tipdata']['tippool_f1'] = split_vals[3]
+    if 'tippool_g1' not in st.session_state['tipdata']:
+        # if 'tippoolpercents' not in st.session_state['tipdata']:
+        split_vals = [70, 15, None, 66, None]  # Update to read from Company Defaults
+        #     dictionary = dict(zip(tippools(), split_vals))
+        st.session_state['tipdata']['tippool_g1'] = split_vals[0]
+        st.session_state['tipdata']['tippool_g2'] = split_vals[1]
+        st.session_state['tipdata']['tippool_f1'] = split_vals[3]
     vals = list()
     col40, col41, col42, colspace, col43, col44 = st.columns([1, 1, 1, .5, 1, 1])
     col40.markdown('#### ' + tippools()[0])

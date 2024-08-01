@@ -140,7 +140,7 @@ def updateTipPoolNames(client):
     st.write('Available Tipping Pools')
     st.caption('Pool splits, order is maintained.')
     clients = readClients()
-    tipPool = ['Garden FOH', 'Garden Host', 'Garden BOH', 'FOH', 'BOH']
+    tipPool = ['Garden FOH', 'Garden Host', 'Garden BOH', 'Lead', 'FOH', 'BOH']
     if 'tippools' in clients[client]:
         tipPool = clients[client]['tippools']
     update = st.data_editor(

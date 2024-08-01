@@ -11,7 +11,6 @@ from sync import syncInput
 from sync import syncDataEditor
 
 
-@st.cache_data
 def tippools():
     data = clientGetValue(st.session_state['company'], 'tippools')
     return data
@@ -69,18 +68,20 @@ def tipPercents():
     ukey = 'tippools'
     if 'tippool_g1' not in st.session_state['tipdata']:
         # if 'tippoolpercents' not in st.session_state['tipdata']:
-        split_vals = [70, 15, None, 66, None]  # Update to read from Company Defaults
+        split_vals = [70, 15, None, 10, 66, None]  # Update to read from Company Defaults
         #     dictionary = dict(zip(tippools(), split_vals))
         st.session_state['tipdata']['tippool_g1'] = split_vals[0]
         st.session_state['tipdata']['tippool_g2'] = split_vals[1]
         st.session_state['tipdata']['tippool_f1'] = split_vals[3]
+        st.session_state['tipdata']['tippool_f2'] = split_vals[4]
     vals = list()
-    col40, col41, col42, colspace, col43, col44 = st.columns([1, 1, 1, .5, 1, 1])
+    col40, col41, col42, colspace, col43, col44, col45 = st.columns([1, 1, 1, .5, 1, 1, 1])
     col40.markdown('#### ' + tippools()[0])
     col41.markdown('#### ' + tippools()[1])
     col42.markdown('#### ' + tippools()[2])
     col43.markdown('#### ' + tippools()[3])
     col44.markdown('#### ' + tippools()[4])
+    col45.markdown('#### ' + tippools()[5])
     vals.append(col40.number_input(
         label=tippools()[0], step=1, value=int(st.session_state['tipdata']['tippool_g1']),
         key=ukey+'g1', label_visibility='collapsed', on_change=syncInput, args=(ukey+'g1', 'tippool_g1'))
@@ -97,8 +98,12 @@ def tipPercents():
         label=tippools()[3], step=1, value=int(st.session_state['tipdata']['tippool_f1']),
         key=ukey+'f1', label_visibility='collapsed', on_change=syncInput, args=(ukey+'f1', 'tippool_f1'))
         )
-    vals.append(float(col44.text_input(
-        label=tippools()[4], value=str(100-vals[3]), key=ukey+'b2',
+    vals.append(col44.number_input(
+        label=tippools()[4], step=1, value=int(st.session_state['tipdata']['tippool_f2']),
+        key=ukey+'f2', label_visibility='collapsed', on_change=syncInput, args=(ukey+'f2', 'tippool_f2'))
+        )
+    vals.append(float(col45.text_input(
+        label=tippools()[5], value=str(100-vals[3]-vals[4]), key=ukey+'f3',
         disabled=True, label_visibility='collapsed'))
         )
     # dictionary = dict(zip(tippools(), vals))
@@ -112,7 +117,10 @@ def tipPercents():
         round(gardenpool * vals[1]/100, 2)
                 ]
     gardensplit.append(round(gardenpool-sum(gardensplit), 2))
-    regularsplit = [round(regularpool * vals[3]/100, 2)]
+    regularsplit = [
+        round(regularpool * vals[3]/100, 2),
+        round(regularpool * vals[4]/100, 2)
+                ]
     regularsplit.append(round(regularpool-sum(regularsplit), 2))
     result = gardensplit + regularsplit
     dictionary = dict(zip(tippools(), result))
@@ -228,19 +236,20 @@ def tipDisplayInfo(idx, rates):
 
 def tipDisplaySummary():
     rates = []
-    col40, col41, col42, colspace, col43, col44 = st.columns([1, 1, 1, .5, 1, 1])
+    col40, col41, col42, colspace, col43, col44, col45 = st.columns([1, 1, 1, .5, 1, 1, 1])
     with col40: tipDisplayInfo(0, rates)
     with col41: tipDisplayInfo(1, rates)
     with col42: tipDisplayInfo(2, rates)
     with col43: tipDisplayInfo(3, rates)
     with col44: tipDisplayInfo(4, rates)
+    with col45: tipDisplayInfo(5, rates)
     dictionary = dict(zip(tippools(), rates))
     st.session_state['tipdata']['tippoolhourlyrates'] = dictionary
 
 
 def tipPercentsSummary():
     rerun = True if 'tippoolhourlyrates' not in st.session_state['tipdata'] else False
-    col1, col2 = st.columns([3, 2])
+    col1, col2 = st.columns([3, 3])
     with col1:
         st.markdown(f"#### Event Days Available Tip Pool = ${st.session_state['tipdata']['Avail Event Tip']}")
     with col2:
@@ -541,7 +550,7 @@ def applyTipRatestoHoursWorked():
     if 'tippoolhourlyrates' in st.session_state['tipdata']:
         tiprates = st.session_state['tipdata']['tippoolhourlyrates']
     else:
-        tiprates = dict(zip(tippools(), [0, 0, 0, 0, 0]))  # {"Garden FOH": 0, "Garden Host": 0, "Garden BOH": 0, "FOH": 11.765217391304349, "BOH": 0}
+        tiprates = dict(zip(tippools(), [0, 0, 0, 0, 0, 0]))  # {"Garden FOH": 0, "Garden Host": 0, "Garden BOH": 0, "FOH": 11.765217391304349, "BOH": 0}
     if 'updated_WorkedHoursDataUsedForTipping' in st.session_state:
         st.warning('Table is being udpated elsewhere')
     df = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']

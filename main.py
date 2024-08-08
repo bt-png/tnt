@@ -3,6 +3,8 @@ import streamlit_authentication as st_auth
 from firestore import openconfig
 from firestore import userAssociatedCompanies
 from company import cpmain
+from company import publisharchive
+from firestore import listclientArchive
 from menu import menu
 from style import apply_css
 
@@ -62,6 +64,16 @@ def set_role():
     st.session_state.role = st.session_state._role
 
 
+def archive():
+    with st.expander('Archive', expanded = False):
+        st.write(listclientArchive(st.session_state['company']))
+        with st.form('ArchiveForm', clear_on_submit=True):
+            st.write('Save a Archive')
+            archstring = st.text_input('Name of Archive')
+            if st.form_submit_button('Archive'):
+                publisharchive(archstring)
+
+
 def home():
     # Launch Page - Not Logged in
     st.header('Payroll Tipping Portal')
@@ -76,7 +88,10 @@ def home():
         else:
             selectCompany()
             updateUser()
+    if st.session_state['username'] in st.secrets['admin_user'] and len(st.session_state['company']) > 0:
+        archive()
     menu()  # Render the dynamic menu!
+
     # st.selectbox(
     #     "Select your role:",
     #     [None, "user", "admin", "super-admin"],

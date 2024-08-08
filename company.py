@@ -3,6 +3,7 @@ import pandas as pd
 import firestore
 import pickle
 from firestore import clientUpdateDict
+from firestore import clientArchiveDict
 from firestore import readclients
 from sync import syncdataframes
 
@@ -24,6 +25,22 @@ def servertipdata():
             return pickle.loads(pickled_bit)
     except Exception:
         return {}
+
+
+def publisharchive(str):
+    if 'updatedsomething' in st.session_state:
+        if st.session_state['updatedsomething']:
+            st.session_state['updatedsomething'] = False
+            # Updating handled throu sync.synctipdata as callback function
+            if 'tipdata' not in st.session_state:
+                st.session_state['tipdata'] = {}
+            else:
+                syncdataframes()
+    pickled_bit = pickle.dumps(st.session_state['tipdata'])
+    clientArchiveDict(str, st.session_state['company'], 'tipdata', pickled_bit)
+    readclients.clear()
+    st.session_state['tipdata'] = servertipdata()
+    st.rerun()
 
 
 def publish():

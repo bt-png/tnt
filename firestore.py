@@ -113,6 +113,34 @@ def addclient(client, emails):
 #     except Exception:
 #         st.session_state.auth_warning = 'Error: Please try again later'
 
+def listclientArchive(client):
+    archives = []
+    try:
+        doc_ref = db.collection('archives').document(client)
+        for doc in doc_ref.stream():
+            archives.append(doc.id)
+        return archives
+    # try:
+    #     if 'tipdata' in val:
+    #         pickled_bit = val['tipdata']
+    #         return pickle.loads(pickled_bit)
+    except Exception:
+        return {}
+
+
+def clientArchiveDict(str, client, field, update):
+    try:
+        doc_ref = db.collection('archives').document(client)
+        doc = doc_ref.get()
+        if doc.exists:
+            val = doc.to_dict()
+            val[str] = update
+        else:
+            val = {str: update}
+        doc_ref.set(val)
+    except Exception:
+        st.session_state.auth_warning = 'Error: Please try again later'
+
 
 def clientUpdateDict(client, field, update):
     try:

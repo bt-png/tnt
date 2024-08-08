@@ -83,7 +83,7 @@ def archive():
                 options = listclientArchive(st.session_state['company'])
                 )
             if st.form_submit_button('Load'):
-                if len(archload) == 0:
+                if archload is None:
                     st.warning('Please select an archive')
                 else:
                     loadarchive(archstring)
@@ -94,7 +94,7 @@ def archive():
                 options = listclientArchive(st.session_state['company'])
                 )
             if st.form_submit_button('Delete'):
-                if len(archdelete) == 0:
+                if archdelete is None:
                     st.warning('Please select an archive')
                 else:
                     deletearchive(archdelete)

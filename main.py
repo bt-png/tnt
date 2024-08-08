@@ -4,6 +4,8 @@ from firestore import openconfig
 from firestore import userAssociatedCompanies
 from company import cpmain
 from company import publisharchive
+from company import loadarchive
+from company import deletearchive
 from firestore import listclientArchive
 from menu import menu
 from style import apply_css
@@ -66,12 +68,27 @@ def set_role():
 
 def archive():
     with st.expander('Archive', expanded = False):
-        st.text(listclientArchive(st.session_state['company']))
         with st.form('ArchiveForm', clear_on_submit=True):
-            st.write('Save a Archive')
+            st.write('Save an Archive')
             archstring = st.text_input('Name of Archive')
             if st.form_submit_button('Archive'):
                 publisharchive(archstring)
+        with st.form('LoadArchiveFrom', clear_on_submit=True):
+            st.write('Load an Archive')
+            archstring = st.selectbox(
+                label='Name of Archive',
+                options = listclientArchive(st.session_state['company'])
+                )
+            if st.form_submit_button('Load'):
+                loadarchive(archstring)
+        with st.form('DeleteArchiveFrom', clear_on_submit=True):
+            st.write('Delete an Archive')
+            archstring = st.selectbox(
+                label='Name of Archive',
+                options = listclientArchive(st.session_state['company'])
+                )
+            if st.form_submit_button('Delete'):
+                deletearchive(archstring)
 
 
 def home():

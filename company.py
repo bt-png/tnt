@@ -4,6 +4,8 @@ import firestore
 import pickle
 from firestore import clientUpdateDict
 from firestore import clientArchiveDict
+from firestore import getclientArchive
+from firestore import clientArchiveDelete
 from firestore import readclients
 from sync import syncdataframes
 
@@ -40,6 +42,17 @@ def publisharchive(str):
     clientArchiveDict(str, st.session_state['company'], 'tipdata', pickled_bit)
     readclients.clear()
     st.session_state['tipdata'] = servertipdata()
+    st.rerun()
+
+
+def loadarchive(str):
+    pickled_bit = getclientArchive(str, st.session_state['company'])
+    st.session_state['tipdata'] = pickle.loads(pickled_bit)
+    st.rerun()
+
+
+def deletearchive(str):
+    clientArchiveDelete(str, st.session_state['company'])
     st.rerun()
 
 

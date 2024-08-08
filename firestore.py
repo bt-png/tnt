@@ -117,16 +117,36 @@ def listclientArchive(client):
     archives = []
     try:
         doc_ref = db.collection('archives').document(client)
-        for doc in doc_ref.stream():
-            st.write(doc.data.id)
-            archives.append(doc.id)
-        return archives
-    # try:
-    #     if 'tipdata' in val:
-    #         pickled_bit = val['tipdata']
-    #         return pickle.loads(pickled_bit)
+        doc = doc_ref.get()
+        if doc.exists:
+            archives = doc.to_dict()
+        return archives.keys()
     except Exception:
         return {}
+
+
+def getclientArchive(str, client):
+    try:
+        doc_ref = db.collection('archives').document(client)
+        doc = doc_ref.get()
+        if doc.exists:
+            vals = doc.to_dict()
+            if str in vals:
+                return vals[str]
+    except Exception:
+        st.session_state.auth_warning = 'Error: Please try again later'
+
+
+def clientArchiveDelete(str, client):
+    try:
+        doc_ref = db.collection('archives').document(client)
+        doc = doc_ref.get()
+        if doc.exists:
+            val = doc.to_dict()
+            val.pop(str, None)
+        doc_ref.set(val)
+    except Exception:
+        st.session_state.auth_warning = 'Error: Please try again later'
 
 
 def clientArchiveDict(str, client, field, update):

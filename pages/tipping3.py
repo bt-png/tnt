@@ -51,7 +51,7 @@ def run():
                 src = pd.DataFrame({
                     'Name': ['Square Reg', 'Square Garden', 'Venmo/Cash', 'Adjustment (+/-)'],
                     'Total': [
-                        st.session_state['tipdata'].get('Regular Pool', 0.0),
+                        st.session_state['tipdata'].get('Raw Pool', 0.0) - st.session_state['tipdata'].get('Base Garden Tip', 0.0),
                         st.session_state['tipdata'].get('Base Garden Tip', 0.0),
                         st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
                         st.session_state['tipdata'].get('Service Charge Adjustment', 0.0)

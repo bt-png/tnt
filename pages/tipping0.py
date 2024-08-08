@@ -44,6 +44,7 @@ def loadWorkPositionList():
 
 def loadTotalTips():
     df = st.session_state['tipdata']['df_sales']
+    st.session_state['tipdata']['Raw Pool'] = round(df['Tip'].sum(), 2)
     st.session_state['tipdata']['Total Pool'] = round(df['Tip'].sum(), 2)
 
 
@@ -198,7 +199,9 @@ def gardenDatesPicker():
     st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
     # if 'Regular Pool' not in st.session_state['tipdata']:
     dfSales = st.session_state['tipdata']['df_sales']
-    totalTip = round(dfSales['Tip'].sum() + serviceadjustment, 2)
+    rawTip = round(dfSales['Tip'].sum(), 2)
+    st.session_state['tipdata']['Raw Pool'] = rawTip
+    totalTip = round(rawTip + serviceadjustment, 2)
     st.session_state['tipdata']['Total Pool'] = totalTip
     # totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
     baseRegularTip = totalTip - tip
@@ -237,13 +240,15 @@ def showdata():
         st.markdown('### Sales Data')
         col1, col2 = st.columns([4, 6])
         with col1:
-            st.write(f"Total Tipping Pool from Raw Data= ${format(st.session_state['tipdata']['Total Pool'], ',')}")
+            st.write(f"Total Tipping Pool from Raw Data= ${format(st.session_state['tipdata']['Raw Pool'], ',')}")
             extratips = st.empty()
+            adjustments = st.empty()
             gardenDatesPicker()
-            if 'Extra Garden Tip' in st.session_state['tipdata']:
-                if st.session_state['tipdata']['Extra Garden Tip'] > 0:
-                    total = st.session_state['tipdata']['Total Pool'] + st.session_state['tipdata']['Extra Garden Tip']
-                    extratips.write(f"New Total Tipping Pool = ${format(round(total, 2), ',')}")
+            if st.session_state['tipdata'].get('Extra Garden Tip', 0.00) != 0.00:
+                total = st.session_state['tipdata']['Raw Pool'] + st.session_state['tipdata']['Extra Garden Tip']
+                total += st.session_state['tipdata'].get('Service Charge Adjustment', 0.00)
+                extratips.write(f"New Tipping Pool = ${format(round(total, 2), ',')}")
+
         col2.write('Raw Data')
         col2.dataframe(st.session_state['tipdata']['df_sales'])
     if st.session_state['tipdata']['df_work_hours'] is not None:

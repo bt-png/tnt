@@ -66,7 +66,7 @@ def set_role():
 
 def archive():
     with st.expander('Archive', expanded = False):
-        st.write(listclientArchive(st.session_state['company']))
+        st.text(listclientArchive(st.session_state['company']))
         with st.form('ArchiveForm', clear_on_submit=True):
             st.write('Save a Archive')
             archstring = st.text_input('Name of Archive')

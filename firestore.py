@@ -118,6 +118,7 @@ def listclientArchive(client):
     try:
         doc_ref = db.collection('archives').document(client)
         for doc in doc_ref.stream():
+            st.write(doc.data.id)
             archives.append(doc.id)
         return archives
     # try:

@@ -71,24 +71,27 @@ def archive():
         with st.form('ArchiveForm', clear_on_submit=True):
             st.write('Save an Archive')
             archstring = st.text_input('Name of Archive')
-            if st.form_submit_button('Archive') and len(archstring) > 0:
-                publisharchive(archstring)
+            if len(archstring) > 0:
+                if st.form_submit_button('Archive'):
+                    publisharchive(archstring)
         with st.form('LoadArchiveFrom', clear_on_submit=True):
             st.write('Load an Archive')
             archstring = st.selectbox(
                 label='Name of Archive',
                 options = listclientArchive(st.session_state['company'])
                 )
-            if st.form_submit_button('Load') and len(archstring) > 0:
-                loadarchive(archstring)
+            if len(archstring) > 0:
+                if st.form_submit_button('Load') and len(archstring) > 0:
+                    loadarchive(archstring)
         with st.form('DeleteArchiveFrom', clear_on_submit=True):
             st.write('Delete an Archive')
             archstring = st.selectbox(
                 label='Name of Archive',
                 options = listclientArchive(st.session_state['company'])
                 )
-            if st.form_submit_button('Delete') and len(archstring) > 0:
-                deletearchive(archstring)
+            if len(archstring) > 0:
+                if st.form_submit_button('Delete') and len(archstring) > 0:
+                    deletearchive(archstring)
 
 
 def home():

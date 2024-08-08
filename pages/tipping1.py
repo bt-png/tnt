@@ -249,10 +249,11 @@ def run():
                 st.session_state['tipdata']['Avail Event Tip'] = round(GardenTip, 2)
                 st.markdown(f"#### Event Days = ${st.session_state['tipdata']['Avail Event Tip']}")
                 if 'GardenDates' in st.session_state['tipdata']:
-                    _str = 'Held on | '
-                    for days in st.session_state['tipdata']['GardenDates']['Dates']:
-                        _str += "{:%m/%d/%Y}".format(days) + ' | '
-                    st.write(_str)
+                    if len(st.session_state['tipdata']['GardenDates']['Dates']) > 0:
+                        _str = 'Held on | '
+                        for days in st.session_state['tipdata']['GardenDates']['Dates']:
+                            _str += "{:%m/%d/%Y}".format(days) + ' | '
+                        st.write(_str)
             with col2:
                 regularTip = st.session_state['tipdata']['Regular Pool']
                 chefRegularCut = st.session_state['tipdata'].get('Chef Draw Regular', 0.00)

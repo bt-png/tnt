@@ -173,13 +173,13 @@ def gardenDatesPicker():
     # if 'Extra Garden Tip' not in st.session_state['tipdata']:
     #     st.session_state['tipdata']['Extra Garden Tip'] = 0.0
     extratip = float(st.text_input(
-        'Additional Garden Tips received',
+        'Venmo/Cash',
         value=st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
         key='extragardentips',
         on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
         ))
     serviceadjustment = float(st.text_input(
-        'Service Charge Adjustment (+/-)',
+        'Adjustment (+/-)',
         value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
         key='serviceadjustment',
         on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')

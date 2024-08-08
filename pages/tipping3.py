@@ -19,7 +19,7 @@ def run():
         else:
             st.markdown('---')
             st.markdown('### Owner Summary')
-            col1, col2 = st.columns([7, 4])
+            col1, col2, col3 = st.columns([7, 3, 3])
             with col1:
                 st.markdown('#### Staff Summary')
                 TipChangeSummary()
@@ -35,14 +35,7 @@ def run():
                     order = ['Employee Name', 'Chef Tips', 'Shifts Worked']
                 dfchefpool = dfchefpool.style.format('${:.2f}', subset=['Chef Tips', 'Directed'])
                 st.dataframe(dfchefpool, hide_index=True, column_order=order)
-
-                cuts = pd.DataFrame(st.session_state['tipdata']['tippool'], index=['Total']).transpose()
-                cuts['% of Total'] = [round(100 * x / cuts['Total'].sum(),0) for x in cuts['Total']]
-                cuts = cuts.loc[~(cuts==0).all(axis=1)]
-                cuts = cuts.style.format(
-                    '${:.2f}', subset=['Total']
-                    ).format('{:.0f}%', subset=['% of Total'])
-                st.dataframe(cuts)
+                st.markdown('#### Staff Pools')
                 breakouts = pd.DataFrame({
                     'Total': st.session_state['tipdata']['tippooltotals'],
                     'Rate/hr': st.session_state['tipdata']['tippoolhourlyrates']
@@ -53,6 +46,34 @@ def run():
                     '${:.2f}', subset=['Total', 'Rate/hr']
                     ).format('{:.0f}%', subset=['% of Total'])
                 st.dataframe(breakouts)
+            with col3:
+                st.markdown('#### Tip Sources')
+                src = pd.DataFrame({
+                    'Name': ['Square Reg', 'Square Garden', 'Venmo/Cash', 'Adjustment (+/-)'],
+                    'Total': [
+                        st.session_state['tipdata'].get('Regular Pool', 0.0),
+                        st.session_state['tipdata'].get('Base Garden Tip', 0.0),
+                        st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
+                        st.session_state['tipdata'].get('Service Charge Adjustment', 0.0)
+                        ]
+                        })
+                src.loc['total'] = src[['Total']].sum()
+                src.loc[src.index[-1], 'Name'] = 'Total'
+                src.set_index('Name', inplace=True, drop=True)
+                src.index.name = None
+                src = src.loc[~(src==0).all(axis=1)]
+                src = src.style.format(
+                    '${:.2f}', subset=['Total']
+                    )
+                st.dataframe(src)
+                st.markdown('#### Pool Split')
+                cuts = pd.DataFrame(st.session_state['tipdata']['tippool'], index=['Total']).transpose()
+                cuts['% of Total'] = [round(100 * x / cuts['Total'].sum(),0) for x in cuts['Total']]
+                cuts = cuts.loc[~(cuts==0).all(axis=1)]
+                cuts = cuts.style.format(
+                    '${:.2f}', subset=['Total']
+                    ).format('{:.0f}%', subset=['% of Total'])
+                st.dataframe(cuts)
             st.markdown('#### Position Tip Pool Eligibility Breakout')
             ByPosition()
             st.markdown('---')

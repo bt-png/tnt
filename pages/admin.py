@@ -31,13 +31,12 @@ def run():
                 cp.updateTipPositions(client)
             with col2:
                 cp.updatePositionSplits(client)
-    with st.expander('test data', expanded=False):
-        st.markdown('#### TEST')
-        with st.form('Register New Username with Email to Client', clear_on_submit=False, border=True):
-            email = st.text_input('Email')
-            username = st.text_input('Username')
-            if st.form_submit_button('Save'):
-                cp.associateEmail(email, username)
+        with st.expander('Register New Username/Email to Client', expanded=False):
+            with st.form('Register New Username with Email to Client', clear_on_submit=False, border=True):
+                email = st.text_input('Email')
+                username = st.text_input('Username')
+                if st.form_submit_button('Save'):
+                    cp.associateEmail(email, username)
 
 
 if __name__ == '__main__':

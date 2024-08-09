@@ -65,7 +65,7 @@ def run():
                 src = src.style.format(
                     '${:.2f}', subset=['Total']
                     )
-                src = src.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'grey'})
+                src = src.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
                 st.dataframe(src)
                 st.markdown('#### Pool Split')
                 cuts = pd.DataFrame(st.session_state['tipdata']['tippool'], index=['Total']).transpose()

@@ -11,6 +11,14 @@ from sync import syncInput
 from sync import syncDataEditor
 
 
+def rower(data):
+        s = data.index % 2 != 0
+        s = pd.concat([pd.Series(s)] * data.shape[1], axis=1) #6 or the n of cols u have
+        z = pd.DataFrame(np.where(s, 'background-color:#f2f2f2', ''),
+                     index=data.index, columns=data.columns)
+        return z
+
+
 def tippools():
     data = clientGetValue(st.session_state['company'], 'tippools')
     return data
@@ -476,7 +484,8 @@ def TipsSum():
     df.loc[df.index[-1], 'Employee Name'] = 'Total'
     st.session_state['tipdata']['df_tipssum'] = df.copy()
     df.set_index(['Employee Name'], drop=True, inplace=True)
-    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips'])
+    df = df.style.apply(rower, axis=None)
+    df = df.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips'])
     df = df.format('{:.2f}', subset=['Regular'])
     df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
     st.dataframe(df, hide_index=True,

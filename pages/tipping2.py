@@ -476,7 +476,10 @@ def TipsSum():
     df.loc[df.index[-1], 'Employee Name'] = 'Total'
     st.session_state['tipdata']['df_tipssum'] = df.copy()
     df.set_index(['Employee Name'], drop=True, inplace=True)
-    df = df.style.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
+    df = df.style.format(
+                    '${:.2f}', subset=['Total']
+                    )
+    df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
     st.dataframe(df, hide_index=True,
                  column_order=['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips'],
                  column_config=config)

@@ -29,6 +29,11 @@ def authenticated_menu():
                 publish()
             st.sidebar.caption('Please \'Publish Data\' to make sure it is not lost. \
                                If your browser refreshes, the data will be lost.')
+        else:
+            col1, col2 = st.sidebar.columns([1, 9])
+            if col2.button('Refresh Server Data'):
+                st.session_state['tipdata'] = servertipdata()
+
     # if st.session_state.role in ["admin", "super-admin"]:
     #     st.sidebar.page_link("ti/admin.py", label="Manage users")
     #     st.sidebar.page_link(

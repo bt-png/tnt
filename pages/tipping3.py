@@ -4,7 +4,47 @@ from menu import menu_with_redirect
 from style import apply_css
 from company import servertipdata
 from pages.tipping2 import ByPosition
-from pages.tipping2 import TipChangeSummary
+# from pages.tipping2 import TipChangeSummary
+
+
+def TipChangeSummary():
+    # st.caption('Percent Change from House Tip')
+    df = st.session_state['tipdata']['df_tipssum'].copy()
+    HouseTipSum = df['House Tip'].sum()
+    df.loc[df.index[-1], 'House Tip'] = HouseTipSum
+    CalcTipSum = df['Total Tips'].sum()
+    df.loc[df.index[-1], 'Total Tips'] = CalcTipSum
+    df['House Tip %'] = [100 * (tip / HouseTipSum) for tip in df['House Tip']]
+    df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
+    df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
+    df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
+    # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
+    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
+    if df['House Tip'].sum() == 0:
+        order.remove('House Tip')
+        order.remove('House Tip %')
+        order.remove('% Change')
+    # df['% Change'] = [x if x != np.inf else 0 for x in df['% Change']]
+    # df['% Change'] = df['% Change'].fillna(0)
+    Height = int(35.2 * (len(df) + 1))
+    df.set_index('Employee Name', inplace=True, drop=True)
+    df.index.name = None
+    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tips'])
+    df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
+    df = df.format('{:.2f}', subset=['Regular'])
+    df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
+    config = {
+        'Employee Name': st.column_config.TextColumn(),
+        'Regular': st.column_config.NumberColumn('Total Hours', format='%.2f'),
+        # 'House Tip': st.column_config.NumberColumn(format='$%.2f'),
+        'Total Tips': st.column_config.NumberColumn('CALC Tips', format='$%.2f'),
+        # 'House Tip %': st.column_config.NumberColumn(format='%.2f'),
+        'Total Tips %': st.column_config.NumberColumn('CALC Tips %', format='%.2f'),
+        }
+    # df_tips_agg_p = df_tips_agg_p.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tip'])
+    # df_tips_agg_p = df_tips_agg_p.format('{:.0f}%', subset=['Assigned Tip %', 'House Tip %', '% Change'])
+    st.dataframe(df, hide_index=False, column_config=config, column_order=order, height=Height)
+
 
 def run():
         # with st.container(height=650):
@@ -19,7 +59,7 @@ def run():
         else:
             st.markdown('---')
             st.markdown('### Owner Summary')
-            col1, col2 = st.columns([5, 6])
+            col1, col2 = st.columns([5.25, 6])
             with col1:
                 st.markdown('#### Staff Summary')
                 TipChangeSummary()

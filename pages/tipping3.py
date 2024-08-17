@@ -32,17 +32,17 @@ def run():
                     dfchefpool['Chef Tips'] = [chefpool * (sh / dfchefpool['Shifts Worked'].sum()) for sh in dfchefpool['Shifts Worked']]
                     dfchefpool['Shifts Worked'] = dfchefpool['Shifts Worked'].fillna(0).astype(int)
                     if dfchefpool['Directed'].sum() > 0:
-                        order = ['Chef Tips', 'Directed', 'Shifts Worked']
+                        order = ['Employee Name', 'Chef Tips', 'Directed', 'Shifts Worked']
                     else:
-                        order = ['Chef Tips', 'Shifts Worked']
+                        order = ['Employee Name', 'Chef Tips', 'Shifts Worked']
                     # dfchefpool.loc['total'] = dfchefpool[['Chef Tips']].sum()
                     # dfchefpool.loc[dfchefpool.index[-1], 'Employee Name'] = 'Total'
-                    dfchefpool.set_index('Employee Name', inplace=True, drop=True)
+                    # dfchefpool.set_index('Employee Name', inplace=True, drop=True)
                     # dfchefpool.index.name = None
                     dfchefpool = dfchefpool.style.format('${:.2f}', subset=['Chef Tips', 'Directed'])
                     dfchefpool = dfchefpool.format('{:0.0f}', subset=['Shifts Worked'])
                     # dfchefpool = dfchefpool.set_properties(subset=pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
-                    st.dataframe(dfchefpool, hide_index=False, column_order=order)
+                    st.dataframe(dfchefpool, hide_index=True, column_order=order)
                 with col4:
                     st.markdown('#### Tip Sources')
                     src = pd.DataFrame({

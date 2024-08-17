@@ -86,7 +86,7 @@ def archive():
                 if archload is None:
                     st.warning('Please select an archive')
                 else:
-                    loadarchive(archstring)
+                    loadarchive(archload)
         with st.form('DeleteArchiveFrom', clear_on_submit=True):
             st.write('Delete an Archive')
             archdelete = st.selectbox(

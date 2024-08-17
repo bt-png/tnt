@@ -125,39 +125,39 @@ def listclientArchive(client):
         return {}
 
 
-def getclientArchive(str, client):
+def getclientArchive(archstr, client):
     try:
         doc_ref = db.collection('archives').document(client)
         doc = doc_ref.get()
         if doc.exists:
             vals = doc.to_dict()
-            if str in vals:
-                return vals[str]
+            if archstr in vals.keys():
+                return vals[archstr]
     except Exception:
         st.session_state.auth_warning = 'Error: Please try again later'
 
 
-def clientArchiveDelete(str, client):
+def clientArchiveDelete(archstr, client):
     try:
         doc_ref = db.collection('archives').document(client)
         doc = doc_ref.get()
         if doc.exists:
             val = doc.to_dict()
-            val.pop(str, None)
+            val.pop(archstr, None)
         doc_ref.set(val)
     except Exception:
         st.session_state.auth_warning = 'Error: Please try again later'
 
 
-def clientArchiveDict(str, client, field, update):
+def clientArchiveDict(archstr, client, field, update):
     try:
         doc_ref = db.collection('archives').document(client)
         doc = doc_ref.get()
         if doc.exists:
             val = doc.to_dict()
-            val[str] = update
+            val[archstr] = update
         else:
-            val = {str: update}
+            val = {archstr: update}
         doc_ref.set(val)
     except Exception:
         st.session_state.auth_warning = 'Error: Please try again later'

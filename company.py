@@ -29,7 +29,7 @@ def servertipdata():
         return {}
 
 
-def publisharchive(str):
+def publisharchive(archstr):
     if 'updatedsomething' in st.session_state:
         if st.session_state['updatedsomething']:
             st.session_state['updatedsomething'] = False
@@ -39,20 +39,21 @@ def publisharchive(str):
             else:
                 syncdataframes()
     pickled_bit = pickle.dumps(st.session_state['tipdata'])
-    clientArchiveDict(str, st.session_state['company'], 'tipdata', pickled_bit)
+    clientArchiveDict(archstr, st.session_state['company'], 'tipdata', pickled_bit)
     readclients.clear()
     st.session_state['tipdata'] = servertipdata()
     st.rerun()
 
 
-def loadarchive(str):
-    pickled_bit = getclientArchive(str, st.session_state['company'])
+def loadarchive(archstr):
+    pickled_bit = getclientArchive(archstr, st.session_state['company'])
     st.session_state['tipdata'] = pickle.loads(pickled_bit)
+    st.success('Archive Loaded')
     # st.rerun()
 
 
-def deletearchive(str):
-    clientArchiveDelete(str, st.session_state['company'])
+def deletearchive(archstr):
+    clientArchiveDelete(archstr, st.session_state['company'])
     st.rerun()
 
 

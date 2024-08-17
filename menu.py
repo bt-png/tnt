@@ -33,6 +33,7 @@ def authenticated_menu():
             col1, col2 = st.sidebar.columns([1, 9])
             if col2.button('Refresh Server Data'):
                 st.session_state['tipdata'] = servertipdata()
+                st.rerun()
 
     # if st.session_state.role in ["admin", "super-admin"]:
     #     st.sidebar.page_link("ti/admin.py", label="Manage users")

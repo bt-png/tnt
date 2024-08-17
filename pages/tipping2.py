@@ -83,7 +83,7 @@ def tipPercents():
         st.session_state['tipdata']['tippool_f1'] = split_vals[3]
         st.session_state['tipdata']['tippool_f2'] = split_vals[4]
     vals = list()
-    col40, col41, col42, colspace, col43, col44, col45 = st.columns([1, 1, 1, .5, 1, 1, 1])
+    col40, col41, col42, colspace, col43, col44, col45 = st.columns([1, 1, 1, .125, 1, 1, 1])
     col40.markdown('#### ' + tippools()[0])
     col41.markdown('#### ' + tippools()[1])
     col42.markdown('#### ' + tippools()[2])
@@ -227,11 +227,11 @@ def tipDisplayInfo(idx, rates):
     else:
         hrs = df_hrs[df_hrs['Tip Pool'] == poolname]['Regular'].sum()
         rate = total/hrs if hrs != 0 else 0
-        str = f'''Pool Value: \${round(total,2)}  
-                hrs in Pool: {round(hrs,2)}  
+        str = f'''Pool Value: \${format(round(total,2), '0.2f')}  
+                hrs in Pool: {format(round(hrs,2), '.2f')}  
                 # Employees: {len(emp_count)}  
-
-                Tip Rate/hr: ${round(rate,2)}  
+                -------------------------  
+                Tip Rate/hr: ${format(round(rate,2), '.2f')}  
                 '''
     if hrs == 0 and total != 0:
         st.warning(str)
@@ -244,7 +244,7 @@ def tipDisplayInfo(idx, rates):
 
 def tipDisplaySummary():
     rates = []
-    col40, col41, col42, colspace, col43, col44, col45 = st.columns([1, 1, 1, .5, 1, 1, 1])
+    col40, col41, col42, colspace, col43, col44, col45 = st.columns([1, 1, 1, .125, 1, 1, 1])
     with col40: tipDisplayInfo(0, rates)
     with col41: tipDisplayInfo(1, rates)
     with col42: tipDisplayInfo(2, rates)
@@ -257,7 +257,7 @@ def tipDisplaySummary():
 
 def tipPercentsSummary():
     rerun = True if 'tippoolhourlyrates' not in st.session_state['tipdata'] else False
-    col1, col2 = st.columns([3, 3])
+    col1, colempty, col2 = st.columns([3, 0.125, 3])
     with col1:
         st.markdown(f"#### Event Days Available Tip Pool = ${st.session_state['tipdata']['Avail Event Tip']}")
     with col2:
@@ -438,9 +438,10 @@ def HouseTip():
         st.session_state['tipdata']['housetipsforemployees'] = df.copy()
     df = st.session_state['tipdata']['housetipsforemployees'].copy()
     current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
+    Height = int(35.2 * (len(current_list_of_employees) + 1))
     edited_data = st.data_editor(
         st.session_state['tipdata']['housetipsforemployees'][st.session_state['tipdata']['housetipsforemployees']['Employee Name'].isin(current_list_of_employees)],
-        hide_index=True, num_rows='fixed',
+        hide_index=True, num_rows='fixed', height=Height,
         column_config={
             'Employee Name': st.column_config.TextColumn(disabled=True),
             'House Tip': st.column_config.NumberColumn(format='$%.2f')
@@ -488,7 +489,9 @@ def TipsSum():
     df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips'])
     df = df.format('{:.2f}', subset=['Regular'])
     df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
-    st.dataframe(df, hide_index=True,
+    current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
+    Height = int(35.2 * (len(current_list_of_employees) + 1))
+    st.dataframe(df, hide_index=True, height=Height,
                  column_order=['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips'],
                  column_config=config)
     if removeNA:
@@ -515,7 +518,9 @@ def ByPosition():
         'Regular': st.column_config.NumberColumn('Total Hours', format='%.2f'),
         'Pool Tip': st.column_config.NumberColumn(format='$%.2f')
         }
-    st.dataframe(df, hide_index=True,
+    current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
+    Height = int(35.2 * (len(current_list_of_employees) + 1))
+    st.dataframe(df, hide_index=True, height=Height,
                  column_order=['Employee Name', 'Position', 'Regular', 'Tip Pool', 'Pool Tip'],
                  column_config=config)
     if removeNA:
@@ -541,21 +546,24 @@ def TipChangeSummary():
         order.remove('% Change')
     # df['% Change'] = [x if x != np.inf else 0 for x in df['% Change']]
     # df['% Change'] = df['% Change'].fillna(0)
+    Height = int(35.2 * (len(df) + 1))
+    df.set_index('Employee Name', inplace=True, drop=True)
+    df.index.name = None
     df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tips'])
     df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
     df = df.format('{:.2f}', subset=['Regular'])
-    
+    df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
     config = {
         'Employee Name': st.column_config.TextColumn(),
         'Regular': st.column_config.NumberColumn('Total Hours', format='%.2f'),
         # 'House Tip': st.column_config.NumberColumn(format='$%.2f'),
-        # 'Total Tips': st.column_config.NumberColumn(format='$%.2f'),
+        'Total Tips': st.column_config.NumberColumn('CALC Tips', format='$%.2f'),
         # 'House Tip %': st.column_config.NumberColumn(format='%.2f'),
-        # 'Total Tips %': st.column_config.NumberColumn(format='%.2f'),
+        'Total Tips %': st.column_config.NumberColumn('CALC Tips %', format='%.2f'),
         }
     # df_tips_agg_p = df_tips_agg_p.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tip'])
     # df_tips_agg_p = df_tips_agg_p.format('{:.0f}%', subset=['Assigned Tip %', 'House Tip %', '% Change'])
-    st.dataframe(df, hide_index=True, column_config=config, column_order=order)
+    st.dataframe(df, hide_index=False, column_config=config, column_order=order, height=Height)
 
 
 def applyTipRatestoHoursWorked():
@@ -573,7 +581,7 @@ def applyTipRatestoHoursWorked():
         df.drop('Garden Tips', axis=1, inplace=True)
     df.insert(4, 'Tip Pool Rate', [tiprates[pool] if (pool not in ['Position Not Eligible', 'Helper Not Eligible']) else 0 for pool in df['Tip Pool']])
     df.insert(4, 'Pool Tip', [rate * hrs for rate, hrs in zip(df['Tip Pool Rate'], df['Regular'])])
-    df.insert(4, 'Regular Tips', [tip if (pool in tippools()[3:5]) else 0 for tip, pool in zip(df['Pool Tip'], df['Tip Pool'])])
+    df.insert(4, 'Regular Tips', [tip if (pool in tippools()[3:6]) else 0 for tip, pool in zip(df['Pool Tip'], df['Tip Pool'])])
     df.insert(4, 'Garden Tips', [tip if (pool in tippools()[0:3]) else 0 for tip, pool in zip(df['Pool Tip'], df['Tip Pool'])])
     # df.insert(4, 'Regular Tips', [df[(df['Employee Name'] == x) & (df['Tip Pool'].isin(tippools()[3:5]))]['Pool Tip'].sum() for x in df['Employee Name']])
     # df.insert(4, 'Garden Tips', [df[(df['Employee Name'] == x) & (df['Tip Pool'].isin(tippools()[0:3]))]['Pool Tip'].sum() for x in df['Employee Name']])

@@ -31,7 +31,7 @@ def TipChangeSummary():
     # df.loc['totals', 'Total Tips'] = df.loc[df.index[-2], 'Total Tips'] + df.loc[df.index[-3], 'Total Tips']
     # df.loc[df.index[-1], 'Employee Name'] = 'Total'
     # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
-    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'CALC Rate/hr', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
+    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', 'CALC Rate/hr', '% Change']  # df.columns.tolist()
     if df['House Tip'].sum() == 0:
         order.remove('House Tip')
         order.remove('House Tip %')

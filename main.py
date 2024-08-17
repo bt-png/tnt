@@ -76,7 +76,7 @@ def archive():
                     st.warning('Please input a name')
                 else:
                     publisharchive(archstring)
-        with st.form('LoadArchiveFrom', clear_on_submit=True):
+        with st.form('LoadArchiveFrom', clear_on_submit=False):
             st.write('Load an Archive')
             archload = st.selectbox(
                 label='Name of Archive',

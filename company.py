@@ -48,7 +48,7 @@ def publisharchive(str):
 def loadarchive(str):
     pickled_bit = getclientArchive(str, st.session_state['company'])
     st.session_state['tipdata'] = pickle.loads(pickled_bit)
-    st.rerun()
+    # st.rerun()
 
 
 def deletearchive(str):

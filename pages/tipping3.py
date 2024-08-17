@@ -19,15 +19,15 @@ def TipChangeSummary():
     df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
     df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
     df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
-    df.loc[df.index[-1], 'Employee Name'] = 'Employee Total'
+    df.loc[df.index[-1], 'Employee Name'] = 'Employee SubTotal'
     
-    df.loc['chefs'] = df[[]].sum()
-    df.loc[df.index[-1], 'Employee Name'] = 'Chef Pool'
-    df.loc['chefs', 'Total Tips'] = st.session_state['tipdata']['chefEmployeePool']['Chef Tips'].sum()
+    # df.loc['chefs'] = df[[]].sum()
+    # df.loc[df.index[-1], 'Employee Name'] = 'Chef Pool'
+    # df.loc['chefs', 'Total Tips'] = st.session_state['tipdata']['chefEmployeePool']['Chef Tips'].sum() + st.session_state['tipdata']['chefEmployeePool']['Directed'].sum()
 
-    df.loc['totals'] = df[[]].sum()
-    df.loc['totals', 'Total Tips'] = df.loc[df.index[-2], 'Total Tips'] + df.loc[df.index[-3], 'Total Tips']
-    df.loc[df.index[-1], 'Employee Name'] = 'Total'
+    # df.loc['totals'] = df[[]].sum()
+    # df.loc['totals', 'Total Tips'] = df.loc[df.index[-2], 'Total Tips'] + df.loc[df.index[-3], 'Total Tips']
+    # df.loc[df.index[-1], 'Employee Name'] = 'Total'
     # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
     order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
     if df['House Tip'].sum() == 0:
@@ -42,7 +42,7 @@ def TipChangeSummary():
     df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tips'])
     df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
     df = df.format('{:.2f}', subset=['Regular'])
-    df = df.set_properties(subset = pd.IndexSlice[['Employee Total', 'Total'], :], **{'background-color' : 'lightgrey'})
+    df = df.set_properties(subset = pd.IndexSlice[['Employee SubTotal'], :], **{'background-color' : 'lightgrey'})
     config = {
         'Employee Name': st.column_config.TextColumn(),
         'Regular': st.column_config.NumberColumn('Total Hours', format='%.2f'),
@@ -83,8 +83,8 @@ def run():
                         order = ['Employee Name', 'Chef Tips', 'Directed', 'Shifts Worked']
                     else:
                         order = ['Employee Name', 'Chef Tips', 'Shifts Worked']
-                    dfchefpool.loc['Total'] = dfchefpool[['Chef Tips', 'Shifts Worked']].sum()
-                    dfchefpool.loc[dfchefpool.index[-1], 'Employee Name'] = 'Total'
+                    dfchefpool.loc['Total'] = dfchefpool[['Chef Tips', 'Directed', 'Shifts Worked']].sum()
+                    dfchefpool.loc[dfchefpool.index[-1], 'Employee Name'] = 'Chef SubTotal'
                     dfchefpool = dfchefpool.style.format('${:.2f}', subset=['Chef Tips', 'Directed'])
                     dfchefpool = dfchefpool.format('{:0.0f}', subset=['Shifts Worked'])
                     dfchefpool = dfchefpool.set_properties(subset=pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})

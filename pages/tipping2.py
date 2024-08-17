@@ -216,16 +216,21 @@ def applyColumnSort(_df: pd.DataFrame, sort: list) -> pd.DataFrame:
 
 
 def tipDisplayInfo(idx, rates):
-    df_hrs = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']
+    df_hrs = st.session_state['tipdata']['WorkedHoursDataUsedForTipping'].copy()
     poolname = tippools()[idx]
     total = st.session_state['tipdata']['tippooltotals'][poolname]
-    emp_count = df_hrs[df_hrs['Tip Pool'] == poolname]['Employee Name'].unique()
+    df_hrs = df_hrs[df_hrs['Tip Pool'] == poolname]
+    df_hrs = df_hrs.groupby(['Employee Name']).agg({
+        'Regular': 'sum'
+    })
+    df_hrs = df_hrs[df_hrs['Regular'] > 0]
+    emp_count = df_hrs.index
     if len(df_hrs.index) == 0:
         str = 'No Entries'
         hrs = 0
         rate = 0
     else:
-        hrs = df_hrs[df_hrs['Tip Pool'] == poolname]['Regular'].sum()
+        hrs = df_hrs['Regular'].sum()
         rate = total/hrs if hrs != 0 else 0
         str = f'''Pool Value: \${format(round(total,2), '0.2f')}  
                 hrs in Pool: {format(round(hrs,2), '.2f')}  
@@ -233,12 +238,15 @@ def tipDisplayInfo(idx, rates):
                 -------------------------  
                 Tip Rate/hr: ${format(round(rate,2), '.2f')}  
                 '''
-    if hrs == 0 and total != 0:
-        st.warning(str)
-    elif hrs != 0 and total == 0:
-        st.warning(str)
-    else:
-        st.info(str)
+    with st.container(height=160, border=False):
+        if hrs == 0 and total != 0:
+            st.warning(str)
+        elif hrs != 0 and total == 0:
+            st.warning(str)
+        else:
+            st.info(str)
+    if hrs != 0:
+        st.write(df_hrs.style.format('{:.2f}', subset=['Regular']))
     rates.append(rate)
 
 

@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit_authentication as st_auth
 from company import publish
+from company inport servertipdata
 
 
 def authenticated_menu():

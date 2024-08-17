@@ -10,7 +10,7 @@ def syncInput(widgetkey, tipdatakey):
     st.session_state['updatedsomething'] = True
     try:
         st.session_state['tipdata'][tipdatakey] = float(st.session_state[widgetkey])
-    except TypeError:
+    except Exception:
         st.session_state['tipdata'][tipdatakey] = st.session_state[widgetkey]
 
 

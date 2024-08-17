@@ -72,6 +72,7 @@ def chefsPool():
             else:
                 data['Shifts Worked'] = [0 for x in chefs]
             st.session_state['tipdata']['chefEmployeePool'] = data.copy()
+        st.caption('Directed tips are not deducted from the available Tipping Pool. If needing to take from Tipping Pool, it will appear as a negative adjustment.')
         edited_data = st.data_editor(
             st.session_state['tipdata']['chefEmployeePool'],
             num_rows='fixed' if len(st.session_state['tipdata']['chefEmployeePool']['Employee Name'].to_list()) > 0 else 'dynamic',
@@ -91,6 +92,8 @@ def chefsPool():
             st.session_state['tipdata']['updated_work_shifts'].update(edited_data.set_index('Employee Name'))
         # if not st.session_state['tipdata']['chefEmployeePool'].equals(st.session_state['tipdata']['updated_chefEmployeePool']):
         #     st.warning('Before navigating to another page, be sure to \'Publish Data\'.')
+        
+
     with col2:
         chefPercent = int(
             st.number_input('#### Chef Percentage (%) of Total Pool',

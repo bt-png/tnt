@@ -481,14 +481,14 @@ def TipsSum():
         'House Tip': st.column_config.NumberColumn(format='$%.2f'),
         'Helper Tips': st.column_config.NumberColumn(format='$%.2f'),
         }
-    df.loc['total'] = df[['Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips']].sum()
-    df.loc[df.index[-1], 'Employee Name'] = 'Total'
     st.session_state['tipdata']['df_tipssum'] = df.copy()
+    # df.loc['total'] = df[['Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips']].sum()
+    # df.loc[df.index[-1], 'Employee Name'] = 'Total'
     df.set_index(['Employee Name'], drop=True, inplace=True)
     # df = df.style.apply(rower, axis=None)
     df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips'])
     df = df.format('{:.2f}', subset=['Regular'])
-    df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
+    # df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
     current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
     Height = int(35.2 * (len(current_list_of_employees) + 1))
     st.dataframe(df, hide_index=True, height=Height,
@@ -530,6 +530,8 @@ def ByPosition():
 def TipChangeSummary():
     # st.caption('Percent Change from House Tip')
     df = st.session_state['tipdata']['df_tipssum'].copy()
+    df.loc['total'] = df[['Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips']].sum()
+    df.loc[df.index[-1], 'Employee Name'] = 'Total'
     HouseTipSum = df['House Tip'].sum()
     df.loc[df.index[-1], 'House Tip'] = HouseTipSum
     CalcTipSum = df['Total Tips'].sum()
@@ -547,7 +549,7 @@ def TipChangeSummary():
     # df['% Change'] = [x if x != np.inf else 0 for x in df['% Change']]
     # df['% Change'] = df['% Change'].fillna(0)
     Height = int(35.2 * (len(df) + 1))
-    df.set_index('Employee Name', inplace=True, drop=True)
+    df.set_index('Employee Name', inplace=True, drop=False)
     df.index.name = None
     df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tips'])
     df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
@@ -563,7 +565,7 @@ def TipChangeSummary():
         }
     # df_tips_agg_p = df_tips_agg_p.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tip'])
     # df_tips_agg_p = df_tips_agg_p.format('{:.0f}%', subset=['Assigned Tip %', 'House Tip %', '% Change'])
-    st.dataframe(df, hide_index=False, column_config=config, column_order=order, height=Height)
+    st.dataframe(df, hide_index=True, column_config=config, column_order=order, height=Height)
 
 
 def applyTipRatestoHoursWorked():

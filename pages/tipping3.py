@@ -15,10 +15,12 @@ def TipChangeSummary():
     df.loc[df.index[-1], 'House Tip'] = HouseTipSum
     CalcTipSum = df['Total Tips'].sum()
     df.loc[df.index[-1], 'Total Tips'] = CalcTipSum
+    df['CALC Rate/hr'] = [dollars/hr for dollars, hr in zip(df['Total Tips'], df['Regular'])]
     df['House Tip %'] = [100 * (tip / HouseTipSum) for tip in df['House Tip']]
     df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
     df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
     df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
+    df.loc[df.index[-1], 'CALC Rate/hr'] = None
     df.loc[df.index[-1], 'Employee Name'] = 'Employee SubTotal'
     
     # df.loc['chefs'] = df[[]].sum()
@@ -29,7 +31,7 @@ def TipChangeSummary():
     # df.loc['totals', 'Total Tips'] = df.loc[df.index[-2], 'Total Tips'] + df.loc[df.index[-3], 'Total Tips']
     # df.loc[df.index[-1], 'Employee Name'] = 'Total'
     # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
-    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
+    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'CALC Rate/hr', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
     if df['House Tip'].sum() == 0:
         order.remove('House Tip')
         order.remove('House Tip %')
@@ -39,7 +41,7 @@ def TipChangeSummary():
     Height = int(35.2 * (len(df) + 1))
     df.set_index('Employee Name', inplace=True, drop=False)
     df.index.name = None
-    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tips'])
+    df = df.style.format('${:.2f}', subset=['House Tip', 'CALC Rate/hr', 'Total Tips'])
     df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
     df = df.format('{:.2f}', subset=['Regular'])
     df = df.set_properties(subset = pd.IndexSlice[['Employee SubTotal'], :], **{'background-color' : 'lightgrey'})

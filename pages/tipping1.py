@@ -99,7 +99,8 @@ def chefsPool():
             st.number_input('#### Chef Percentage (%) of Total Pool',
                             value=int(st.session_state['tipdata'].get('Chef Percent', 18)), min_value=0, max_value=100, step=2,
                             key='ChefPercent0', on_change=syncInput, args=('ChefPercent0', 'Chef Percent')))/100
-        st.session_state['tipdata']['Chef Pool'] = round(chefPercent * st.session_state['tipdata']['Total Pool'], 2)
+        totalpool = st.session_state['tipdata']['Event Tip'] + st.session_state['tipdata']['Regular Pool']
+        st.session_state['tipdata']['Chef Pool'] = round(chefPercent * totalpool, 2)
         if chefPercent > 0:
             sliderenabled = False
             if st.session_state['tipdata']['Event Tip'] == 0:

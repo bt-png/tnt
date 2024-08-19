@@ -630,7 +630,11 @@ def run():
             st.markdown('---')
             tipsummary_container = st.container()
             col1, col2 = st.columns([8,2])
-            col2.toggle('Pool $ Value', False, 'PoolDollarToggle')
+            if col2.radio('Display quick Pool as', ['Hours', 'Dollars']) == 'Dollars':
+                st.session_state['PoolDollarToggle'] = True
+            else:
+                st.session_state['PoolDollarToggle'] = False
+            # col2.toggle('Pool $ Value', False, 'PoolDollarToggle')
             st.markdown('---')
             st.markdown('### Revise Working')
             reviseDefaultSplits()

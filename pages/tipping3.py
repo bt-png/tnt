@@ -15,19 +15,21 @@ def TipChangeSummary():
     df = st.session_state['tipdata']['df_tipssum'].copy()
     altrows = df['Employee Name'].iloc[1::2]
     df.loc['Employee SubTotal'] = df[[]].sum()
+    HoursSum = df['Regular'].sum()
+    df.loc[df.index[-1], 'Regular'] = HoursSum
     HouseTipSum = df['House Tip'].sum()
     df.loc[df.index[-1], 'House Tip'] = HouseTipSum
     CalcTipSum = df['Total Tips'].sum()
     df.loc[df.index[-1], 'Total Tips'] = CalcTipSum
+    df.loc[df.index[-1], 'CALC Rate/hr'] = CalcTipSum/HoursSum
+    df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
+    df.loc[df.index[-1], 'Employee Name'] = 'Employee SubTotal'
+    
     df['CALC Rate/hr'] = [dollars/hr for dollars, hr in zip(df['Total Tips'], df['Regular'])]
     df['House Tip %'] = [100 * (tip / HouseTipSum) for tip in df['House Tip']]
     df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
     df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
     
-    
-    df.loc['Employee SubTotal', '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
-    df.loc['Employee SubTotal', 'CALC Rate/hr'] = None
-    df.loc['Employee SubTotal', 'Employee Name'] = 'Employee SubTotal'
     
     # df.loc['chefs'] = df[[]].sum()
     # df.loc[df.index[-1], 'Employee Name'] = 'Chef Pool'

@@ -22,6 +22,8 @@ def TipChangeSummary():
     df['House Tip %'] = [100 * (tip / HouseTipSum) for tip in df['House Tip']]
     df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
     df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
+    
+    df.loc['Employee Subtotal'] = df[[]].sum()
     df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
     df.loc[df.index[-1], 'CALC Rate/hr'] = None
     df.loc[df.index[-1], 'Employee Name'] = 'Employee SubTotal'

@@ -221,7 +221,8 @@ def tipDisplayInfo(idx, rates):
     total = st.session_state['tipdata']['tippooltotals'][poolname]
     df_hrs = df_hrs[df_hrs['Tip Pool'] == poolname]
     df_hrs = df_hrs.groupby(['Employee Name']).agg({
-        'Regular': 'sum'
+        'Regular': 'sum',
+        'Pool Tip': 'sum'
     })
     df_hrs = df_hrs[df_hrs['Regular'] > 0]
     emp_count = df_hrs.index
@@ -246,7 +247,12 @@ def tipDisplayInfo(idx, rates):
         else:
             st.info(str)
     if hrs != 0:
-        st.write(df_hrs.style.format('{:.2f}', subset=['Regular']))
+        if st.session_state['PoolDollarToggle']:
+            order = ['Employee Name', 'Pool Tip']
+        else:
+            order = ['Employee Name', 'Regular']
+        st.dataframe(df_hrs.style.format('{:.2f}', subset=['Regular']).format('${:.2f}', subset=['Pool Tip']),
+                 hide_index=False, column_order=order)
     rates.append(rate)
 
 
@@ -623,6 +629,8 @@ def run():
                 
             st.markdown('---')
             tipsummary_container = st.container()
+            col1, col2 = st.columns([8,2])
+            col2.toggle('Pool $ Value', False, 'PoolDollarToggle')
             st.markdown('---')
             st.markdown('### Revise Working')
             reviseDefaultSplits()

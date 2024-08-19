@@ -202,7 +202,7 @@ def run():
                     cuts = cuts.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     st.dataframe(cuts, hide_index=True)
             notes = st.text_area(
-                'Notes', height=int(35.2 * (6)), 
+                'Notes', height=int(35.2 * (5)), 
                 value=st.session_state['tipdata'].get('Tipping Notes', ''),
                 key='tippingnotes',
                 on_change=syncInput, args=('tippingnotes', 'Tipping Notes')

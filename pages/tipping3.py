@@ -5,6 +5,7 @@ from io import BytesIO
 from menu import menu_with_redirect
 from style import apply_css
 from company import servertipdata
+from company import clientGetValue
 from sync import syncInput
 # from pages.tipping2 import ByPosition
 # from pages.tipping2 import TipChangeSummary
@@ -44,6 +45,7 @@ def TipChangeSummary():
         order.remove('House Tip')
         order.remove('House Tip %')
         order.remove('% Change')
+    order.remove('CALC Rate/hr')
     # df['% Change'] = [x if x != np.inf else 0 for x in df['% Change']]
     # df['% Change'] = df['% Change'].fillna(0)
     Height = int(35.2 * (len(df) + 1))
@@ -99,6 +101,76 @@ def ByPosition():
     if removeNA:
         st.caption('Positions where the \'Tip Pool\' is \'Position Not Eligible\' have been removed from this summary.')
     return df
+
+
+def TipsSum():
+    df = st.session_state['tipdata']['WorkedHoursDataUsedForTipping'].copy()
+    df = df[df['Tip Pool'] != 'Position Not Eligible']
+    df['Pool'] = ['Garden' if ('Garden' in x) else 'Regular' for x in df['Tip Pool']]
+    df = df.groupby(['Employee Name', 'Pool']).agg({
+        'Regular': 'sum',
+        'Garden Tips': 'sum',
+        'Regular Tips': 'sum'
+        })
+    df.reset_index(inplace=True)
+    df_reg = df[df['Pool'] == 'Regular']
+    df_reg.drop(['Pool', 'Garden Tips'], axis=1, inplace=True)
+    df_reg.rename(columns={'Regular': 'Regular Hours'}, inplace=True)
+    df_reg['Regular Tip Rate'] = [round(x/y,2) for x, y in zip(df_reg['Regular Tips'], df_reg['Regular Hours'])]
+    df_garden = df[df['Pool'] == 'Garden']
+    df_garden.drop(['Pool', 'Regular Tips'], axis=1, inplace=True)
+    df_garden.rename(columns={'Regular': 'Garden Hours'}, inplace=True)
+    df_garden['Garden Tip Rate'] = [round(x/y,2) for x, y in zip(df_garden['Garden Tips'], df_garden['Garden Hours'])]
+    # df.set_index(['Employee Name'], inplace=True)
+    df = pd.merge(left=df_reg, left_on='Employee Name', right=df_garden, right_on='Employee Name', how='outer')
+    # st.dataframe(df)
+    # df['Garden Pool Hours'] = [sum(x) for x in ['']]
+    # return
+    removeNA = False
+    # df = st.session_state['tipdata']['WorkedHoursDataUsedForTipping'].copy()
+    # df = df.groupby(['Employee Name']).agg({
+    #     'Regular': 'sum',
+    #     'Garden Tips': 'sum',
+    #     'Regular Tips': 'sum'
+    #     })
+    # # st.dataframe(df)
+    # df.reset_index(inplace=True)
+    # dfhouse = st.session_state['tipdata']['housetipsforemployees']
+    # df = pd.merge(left=df, left_on='Employee Name', right=dfhouse, right_on=['Employee Name'], how='inner')
+    dfhelper = st.session_state['tipdata']['Helper Pool Employees']
+    HelperPool = st.session_state['tipdata'].get('Helper Pool', 0.0)
+    if len(dfhelper) > 0 and HelperPool > 0:
+        df['Helper Tips'] = [HelperPool/len(dfhelper) if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
+        # order = ['Employee Name', 'Regular Hours', 'Regular Tips', 'Regular Tips', 'Helper Tips']
+    # else:
+        # df['Helper Tips'] = 0
+        # order = ['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips']
+    # df['Total Tips'] = [G + R + H for G, R, H in zip(df['Garden Tips'], df['Regular Tips'], df['Helper Tips'])]
+    df.replace(0, np.nan, inplace=True)
+    # if removeNA:
+    #     df.dropna(subset=['Total Tips'], inplace=True)
+    config = {
+        'Regular Tips': st.column_config.NumberColumn('Tips'),
+        'Regular Tip Rate': st.column_config.NumberColumn('Tip Rate'),
+        'Garden Tips': st.column_config.NumberColumn('Tips'),
+        'Garden Tip Rate': st.column_config.NumberColumn('Tip Rate'),
+        }
+    altrows = [i for i in range(0,len(df.index)-1) if i%2!=0]
+    df.loc['total'] = df[['Regular Tips', 'Garden Tips']].sum()
+    df.loc[df.index[-1], 'Employee Name'] = 'Total'
+    # df.set_index(['Employee Name'], drop=True, inplace=True)
+    rows = len(df)
+    Height = int(35.2 * (rows + 1))
+    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Regular Tip Rate', 'Garden Tip Rate'])
+    df = df.format('{:.2f}', subset=['Regular Hours', 'Garden Hours'])
+    # df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
+    current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
+    # Height = int(35.2 * (len(current_list_of_employees) + 1))
+    df = df.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
+    df = df.set_properties(subset = pd.IndexSlice[df.index[-1], :], **{'background-color' : 'lightsteelblue'})
+    st.dataframe(df, hide_index=True, height=Height, column_config=config)
+    if removeNA:
+        st.caption('Positions where the \'Tip Pool\' is \'Position Not Eligible\' have been removed from this summary.')
 
 
 def run():
@@ -213,8 +285,10 @@ def run():
                 on_change=syncInput, args=('tippingnotes', 'Tipping Notes')
                 )
             st.markdown('---')
-            st.markdown('#### Position Tip Pool Eligibility Breakout')
-            dfbyposition = ByPosition()
+            # st.markdown('#### Position Tip Pool Eligibility Breakout')
+            # dfbyposition = ByPosition()
+            st.markdown('#### Position Tip Summary')
+            TipsSum()
             st.markdown('---')
             st.markdown('#### Revisions to Work Positions')
             df = pd.DataFrame.empty

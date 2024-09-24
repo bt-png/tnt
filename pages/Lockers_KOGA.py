@@ -9,8 +9,7 @@ def active_combination(locker_num, _df):
 def show_combination(locker_num, _df):
     combinations = _df.loc[_df['Locker'] == locker_num]['Combinations'].values[0]
     active = active_combination(locker_num, _df)
-    st.subheader('Your locker combo may be:')
-    st.success(combinations[active])
+    return combinations[active]
 
 
 def next_combination(locker_num, _df):
@@ -19,6 +18,7 @@ def next_combination(locker_num, _df):
         _df.loc[_df[_df['Locker'] == locker_num].index, 'Current'] = 0
     else:
         _df.loc[_df[_df['Locker'] == locker_num].index, 'Current'] += 1
+    st.caption('Please try the new combination')
     
 
 
@@ -47,6 +47,8 @@ if __name__ == '__main__':
         st.session_state.df = load_df()
     if 'toomanytries' not in st.session_state:
         st.session_state.toomanytries = False
+    if 'worked' not in st.session_state:
+        st.session_state.worked = False
     df = st.session_state.df
     family = st.text_input('Family Name')
     locker = st.text_input('Locker Number')
@@ -59,16 +61,27 @@ if __name__ == '__main__':
                 if st.session_state.toomanytries:
                     st.warning('Looks like something may be wrong. Please visit the front office.')
                 else:
-                    col1, col2 = st.columns([2,1])
-                    with col1:
-                        show_combination(locker, df)
-                    with col2:
-                        st.container(height=50, border=False)
-                        button = st.empty()
-                        if button.button("That didn't work"):
-                            next_combination(locker, df)
-                            if (df[df['Locker'] == locker]['Current'][0]) == (df[df['Locker'] == locker]['Start'][0]):
-                                st.session_state.toomanytries = True
+                    if st.session_state.worked:
+                        st.subheader('Your locker combo is')
+                        st.success(show_combination(locker, df))
+                        st.write('Thank you for confirming the locker combination.')
+                    else:
+                        col1, col2 = st.columns([2,1])
+                        with col1:
+                            st.subheader('Your locker combo may be:')
+                            st.warning(show_combination(locker, df))
+                        with col2:
+                            st.container(height=50, border=False)
+                            button = st.empty()
+                            if button.button("That didn't work"):
+                                next_combination(locker, df)
+                                if (df[df['Locker'] == locker]['Current'][0]) == (df[df['Locker'] == locker]['Start'][0]):
+                                    st.session_state.toomanytries = True
+                                st.rerun()
+                        if st.button("That combination worked!"):
+                            st.session_state.worked = True
+                            st.rerun()
+                        
                     
         else:
             st.write('Locker number is not assigned')

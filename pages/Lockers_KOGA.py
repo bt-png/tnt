@@ -14,7 +14,8 @@ def show_combination(locker_num, _df):
 
 
 def next_combination(locker_num, _df):
-    if _df.loc[_df[_df['Locker'] == locker_num].index, 'Current'] == 4:
+    # st.text(_df.loc[_df[_df['Locker'] == locker_num].index, 'Current'][0])
+    if _df.loc[_df[_df['Locker'] == locker_num].index, 'Current'][0] == 4:
         _df.loc[_df[_df['Locker'] == locker_num].index, 'Current'] = 0
     else:
         _df.loc[_df[_df['Locker'] == locker_num].index, 'Current'] += 1

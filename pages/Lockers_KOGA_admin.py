@@ -3,7 +3,7 @@ import pandas as pd
 from firestore_lockers import post_locker_data
 from firestore_lockers import post_locker_assignments
 from firestore_lockers import get_locker_assignments
-from pages.Lockers_KOGA import load_df
+# from pages.Lockers_KOGA import load_df
 
 
 def import_csv(uploaded_file):
@@ -29,14 +29,14 @@ if __name__ == '__main__':
         page_title='KOGA Locker Assignment | Admin',
         layout='wide'
     )
-    if 'df' not in st.session_state:
-        st.session_state.df = load_df()
+    # if 'df' not in st.session_state:
+    #     st.session_state.df = load_df()
     with open('style_lockers.css') as css:
         st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
     if 'admin_user' not in st.session_state:
         st.session_state.admin_user = False
     if st.session_state.admin_user:
-        df = st.session_state.df
+        # df = st.session_state.df
         # if 'df_assigned' not in st.session_state:
         #     df_assigned = get_locker_assignments()
         #     st.session_state.df_assigned = df_assigned

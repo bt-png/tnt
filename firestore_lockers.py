@@ -58,6 +58,25 @@ def post_locker_assignments(updates: dict):
         return False
 
 
+def revoke_locker_assignment(locker_num: int):
+    try:
+        doc_ref = db.collection('locker_data_KOGA').document('Assignments')
+        doc = doc_ref.get()
+        if doc.exists:
+            val = doc.to_dict()
+            if str(locker_num) in val.keys():
+                val.pop(str(locker_num))
+                doc_ref.set(val)
+                return True
+            else:
+                return False
+        else:
+            return False
+    except Exception as error:
+        st.session_state.auth_warning = 'Error: Please try again later'
+        return False
+
+
 # def stream_locker_data():
 #     updatemade = False
 #     batch = db.batch()

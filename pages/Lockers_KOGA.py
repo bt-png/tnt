@@ -176,7 +176,7 @@ def run():
         locker = st.text_input('Locker Number')
         if locker != '' and locker.isnumeric:
             locker = int(locker)
-            family = st.session_state.df_assigned.get(str(locker))
+            family = st.session_state.df_assigned.get(str(locker), '')
             if len(family) > 0:
                 st.write(f'Assigned Family: {family}')
             else:

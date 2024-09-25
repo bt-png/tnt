@@ -63,7 +63,7 @@ if __name__ == '__main__':
         col1, col2, col3 = st.columns([1,5,1])
         # col2.link_button('GoTo Locker Combination Page', 'pages/Lockers_KOGA', use_container_width=True)
         if col2.button('Go to Locker Combinations Page as "admin"', use_container_width=True):
-            st.switch_page('pages/Lockers_KOGA')
+            st.switch_page('pages/Lockers_KOGA.py')
     else:
         password = st.text_input('Credentials', type='password')
         if 'locker_admin' in st.secrets:

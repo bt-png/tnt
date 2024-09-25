@@ -17,7 +17,8 @@ def import_csv(uploaded_file):
         'Comments': []
     })
     df['Locker'] = upload['Locker #']
-    df['Start'] = [x if x != 'UNKNOWN' else 1 for x in upload['2024 Combo in Use']]
+    combos = ['Green Combo 1', 'Purple Combo 2', 'Mauve Combo 3', 'Orange Combo 4', 'Blue Combo 5']
+    df['Start'] = [combos.index(x) if x in combos else 0 for x in upload['2024 Combo in Use']]
     df['Current'] = df['Start']
     df['Combinations'] = [[a, b, c, d, e] for a, b, c, d, e in zip(upload['Green Combo 1'], upload['Purple Combo 2'], upload['Mauve Combo 3'], upload['Orange Combo 4'], upload['Blue Combo 5'])]
     df['Assigned'] = upload['Family Name']

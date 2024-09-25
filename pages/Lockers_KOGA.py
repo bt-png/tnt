@@ -176,6 +176,13 @@ def run():
         locker = st.text_input('Locker Number')
         if locker != '' and locker.isnumeric:
             locker = int(locker)
+            family = st.session_state.df_assigned.get(str(locker))
+            if len(family) > 0:
+                st.write(f'Assigned Family: {family}')
+            else:
+                family = st.text_input('Family Name')
+                if st.button('Assign Locker to Family'):
+                    st.warning('update')
             locker_data(locker)
             show_locker_combo(locker)
         else:

@@ -172,7 +172,7 @@ def show_locker_combo(locker_num):
                         'Verified': datetime.now()})
                     clear_locker_data()
                     st.rerun()
-            locker_instructions(combo)
+        locker_instructions(combo)
 
 
 def clear_locker_data():

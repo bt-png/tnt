@@ -61,7 +61,9 @@ if __name__ == '__main__':
                         col2.success('Assignments Updated')
         # st.text(st.session_state.df_assigned)
         col1, col2, col3 = st.columns([1,5,1])
-        col2.link_button('GoTo Locker Combination Page', 'pages/Lockers_KOGA', use_container_width=True)
+        # col2.link_button('GoTo Locker Combination Page', 'pages/Lockers_KOGA', use_container_width=True)
+        if col2.button('Go to Locker Combinations Page as "admin"', use_container_width=True):
+            st.switch_page('pages/Lockers_KOGA')
     else:
         password = st.text_input('Credentials', type='password')
         if 'locker_admin' in st.secrets:

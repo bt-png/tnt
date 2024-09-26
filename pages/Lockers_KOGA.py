@@ -115,7 +115,9 @@ def locker_instructions(combo):
             col_S3[2].warning(b)
             col_S4[2].warning(c)
     st.markdown('---')
-    st.link_button('Masterlock Student Tutorial: YouTube', url='https://youtu.be/f3mWMdWeE8g?si=iAZYyF4vsBiB0CIQ', use_container_width=True)
+    # st.link_button('Masterlock Video Tutorial', url='https://youtu.be/vhdbz1ZmxTo?si=yAxgUIaTCjmfDJXc', use_container_width=True)
+    col1, col2, col3 = st.columns([1,1,1])
+    col2.video(data='https://youtu.be/vhdbz1ZmxTo?si=yAxgUIaTCjmfDJXc')
 
 
 def show_locker_combo(locker_num):

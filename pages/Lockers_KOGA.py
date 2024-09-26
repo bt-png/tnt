@@ -131,7 +131,7 @@ def show_locker_combo(locker_num):
     else:
         if st.session_state.worked:
             st.markdown('---')
-            st.subheader('Your locker combo is')
+            st.subheader('Your combination is')
             col1, col2 = st.columns([2,1])
             with col1:
                 combo = show_combination(locker_num, True)
@@ -158,7 +158,7 @@ def show_locker_combo(locker_num):
                     st.rerun()
         else:
             st.markdown('---')
-            st.subheader('Your locker combo may be:')
+            st.subheader('Combination')
             combo = show_combination(locker_num, False)
             st.caption('''
                        Try a few times following the instructions provided at the bottom of this page.  

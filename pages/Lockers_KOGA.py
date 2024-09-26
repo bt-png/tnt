@@ -185,19 +185,27 @@ def clear_locker_data():
         st.session_state.pop('locker_data')
     if st.session_state.toomanytries:
         st.session_state.toomanytries = False
-    if st.session_state.worked:
-        st.session_state.worked = False
-    if 'opened' in st.session_state:
-        st.session_state.opened = None
+    # if st.session_state.worked:
+    #     st.session_state.worked = False
+    # if 'opened' in st.session_state:
+    #     st.session_state.opened = None
 
 
 def locker_data(locker):
     if 'locker_data' not in st.session_state:
         st.session_state.locker_data = get_locker_data(locker)
+        # st.text(st.session_state.locker_data)
         verified = st.session_state.locker_data.get('Verified', '')
         if isinstance(verified, datetime):
             if verified.timestamp() > datetime.today().replace(year=datetime.today().year-1).timestamp():
                 st.session_state.worked = True
+        comments = st.session_state.locker_data.get('Comments', '')
+        if 'No Issues' in comments:
+            st.session_state.worked = True
+        if 'All Combos Failed' in comments:
+            st.session_state.toomanytries = True
+        if 'Cannot Open Door' in comments:
+            st.session_state.worked = False
 
 
 def input_family():

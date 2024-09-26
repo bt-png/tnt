@@ -208,8 +208,7 @@ def locker_data(locker):
             elif 'All Combos Failed' in comments:
                 st.session_state.toomanytries = True
             elif 'Cannot Open Door' in comments:
-                st.session_state.opened = True
-                st.session_state.worked = False
+                st.session_state.toomanytries = True
             if 'Combo Verified' in comments:
                 st.session_state.worked = True
         else:

@@ -149,12 +149,10 @@ def show_locker_combo(locker_num):
                          Did the Locker open as well?''')
                 col1, col2 = st.columns([1,1])
                 if col1.button('Yes, no issues'):
-                    st.session_state.opened = True
                     post_locker_data(locker_num, {'Comments': 'Combo Verified, No Issues'})
                     clear_locker_data()
                     st.rerun()
                 if col2.button('No, its stuck'):
-                    st.session_state.opened = False
                     post_locker_data(locker_num, {'Comments': 'Cannot Open Door'})
                     clear_locker_data()
                     st.rerun()
@@ -170,12 +168,10 @@ def show_locker_combo(locker_num):
             if col1.button("Try a different combination"):
                 next_combination(locker_num)
                 if active_combination(locker_num) == initial_combination(locker_num):
-                    st.session_state.toomanytries = True
                     post_locker_data(locker_num, {'Comments': 'All Combos Failed'})
                     clear_locker_data()
                 st.rerun()
             if col2.button("Lock Opened!"):
-                    st.session_state.worked = True
                     post_locker_data(locker_num, {
                         'Comments': 'Combo Verified',
                         'Current': active_combination(locker_num),
@@ -208,10 +204,14 @@ def locker_data(locker):
         if type(comments) is str:
             if 'No Issues' in comments:
                 st.session_state.worked = True
-            if 'All Combos Failed' in comments:
+                st.session_state.opened = True
+            elif 'All Combos Failed' in comments:
                 st.session_state.toomanytries = True
-            if 'Cannot Open Door' in comments:
+            elif 'Cannot Open Door' in comments:
+                st.session_state.opened = True
                 st.session_state.worked = False
+            if 'Combo Verified' in comments:
+                st.session_state.worked = True
         else:
             st.session_state.worked = False
             st.session_state.opened = None

@@ -86,6 +86,7 @@ def locker_instructions(combo):
     if combo is not None:
         a, b, c = combo.split('-')
     st.markdown('---')
+    st.write('#### ' + '<div style="text-align:center">'+'General Instructions'+'</div>', unsafe_allow_html=True)
     st.markdown('#### Step 1 - CLEAR')
     col_S1 = locker_instructions_cols(combo is not None)
     col_S1[1].markdown('##### Spin the dial at least three times to the right, to clear.')
@@ -130,12 +131,9 @@ def show_locker_combo(locker_num):
         st.warning('Looks like something may be wrong. Please visit the front office.')
     else:
         if st.session_state.worked:
-            st.markdown('---')
-            st.subheader('Your combination is')
             col1, col2 = st.columns([2,1])
-            with col1:
-                combo = show_combination(locker_num, True)
             if st.session_state.opened == True:
+                st.markdown('---')
                 st.write('##### Yeah! Please visit the Google Form linked below to complete your registration.')
                 col1, col2, col3 = st.columns([1,5,1])
                 col2.link_button(
@@ -144,7 +142,10 @@ def show_locker_combo(locker_num):
                     , use_container_width=True)
             elif st.session_state.opened == False:
                 st.warning('Please visit the front office for assistance.')
-            else:
+            st.markdown('---')
+            st.write('#### ' + '<div style="text-align:center">'+'Your Combination is'+'</div>', unsafe_allow_html=True)
+            combo = show_combination(locker_num, True)
+            if st.session_state.opened == None:
                 st.write('''Thank you for confirming the locker combination for our records.
                          Did the Locker open as well?''')
                 col1, col2 = st.columns([1,1])
@@ -158,7 +159,7 @@ def show_locker_combo(locker_num):
                     st.rerun()
         else:
             st.markdown('---')
-            st.subheader('Combination')
+            st.write('#### ' + '<div style="text-align:center">'+'Combination'+'</div>', unsafe_allow_html=True)
             combo = show_combination(locker_num, False)
             st.caption('''
                        Try a few times following the instructions provided at the bottom of this page.  

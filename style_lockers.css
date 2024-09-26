@@ -34,9 +34,25 @@ h4 {
     /*background-color:blanchedalmond !important;*/
 }
 
-p, input, button[data-baseweb=tab], ul, li, [class^=st-c], [class^=st-b], section[role=button], [class=vg-tooltip] {
+p, ul, li, [class^=st-c], [class^=st-b], [class=vg-tooltip] {
     font-family: 'Proza Libre', sans-serif !important;
     font-style: normal !important;
+    color: light-dark(#404040, #CCCCCC) !important/*NEUTRAL-ONYX*/;
+    /*background-color:aquamarine !important;*/
+}
+
+input {
+    font-family: 'Proza Libre', sans-serif !important;
+    font-style: normal !important;
+    font-size: 18px !important;
+    color: light-dark(#404040, #CCCCCC) !important/*NEUTRAL-ONYX*/;
+    /*background-color:aquamarine !important;*/
+}
+
+button[kind=secondary] p, section[role=button], div[data-testid=stLinkButton] p{
+    font-family: 'Proza Libre', sans-serif !important;
+    font-size: 24px !important;
+    font-style: bold !important;
     color: light-dark(#404040, #CCCCCC) !important/*NEUTRAL-ONYX*/;
     /*background-color:aquamarine !important;*/
 }
@@ -69,6 +85,6 @@ div[class=glideDataEditor], div[glideDataEditor], div[data-testid=stFullScreenFr
 
 div[role=alert] p{
     text-align: center !important;
-    font-size: 36px !important;
+    font-size: 24px !important;
     font-style: bold !important;
 }

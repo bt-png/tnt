@@ -136,10 +136,10 @@ def show_locker_combo(locker_num):
             with col1:
                 combo = show_combination(locker_num, True)
             if st.session_state.opened == True:
-                st.success('Yeah! Please visit the Google Form linked below for the locker inspection sheet.')
+                st.write('##### Yeah! Please visit the Google Form linked below to complete your registration.')
                 col1, col2, col3 = st.columns([1,5,1])
                 col2.link_button(
-                    'Google Form: KOGA Locker Inspection',
+                    ':memo: Locker Agreement Form',
                     'https://docs.google.com/forms/d/e/1FAIpQLSc0jER8RakKZrZYbmKsqIurjaFj_H6d8njJZ-6DetI5lHtdZQ/viewform'
                     , use_container_width=True)
             elif st.session_state.opened == False:
@@ -148,11 +148,11 @@ def show_locker_combo(locker_num):
                 st.write('''Thank you for confirming the locker combination for our records.
                          Did the Locker open as well?''')
                 col1, col2 = st.columns([1,1])
-                if col1.button('Yes, no issues'):
+                if col1.button(':white_check_mark: Yes, no issues'):
                     post_locker_data(locker_num, {'Comments': 'Combo Verified, No Issues'})
                     clear_locker_data()
                     st.rerun()
-                if col2.button('No, its stuck'):
+                if col2.button(':x: No, its stuck'):
                     post_locker_data(locker_num, {'Comments': 'Cannot Open Door'})
                     clear_locker_data()
                     st.rerun()
@@ -165,13 +165,13 @@ def show_locker_combo(locker_num):
                        If the lock continues to not unlock, let's try a different combination.
                        ''')
             col1, col2 = st.columns([1,1])
-            if col1.button("Try a different combination"):
+            if col1.button(":x: Try a different combination"):
                 next_combination(locker_num)
                 if active_combination(locker_num) == initial_combination(locker_num):
                     post_locker_data(locker_num, {'Comments': 'All Combos Failed'})
                     clear_locker_data()
                 st.rerun()
-            if col2.button("Lock Opened!"):
+            if col2.button(":white_check_mark: Lock Opened!"):
                     post_locker_data(locker_num, {
                         'Comments': 'Combo Verified',
                         'Current': active_combination(locker_num),

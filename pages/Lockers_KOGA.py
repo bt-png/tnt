@@ -128,7 +128,10 @@ def show_locker_combo(locker_num):
     # st.text(st.session_state.locker_data)
     _df = pd.DataFrame()
     if st.session_state.toomanytries:
-        st.warning('Looks like something may be wrong. Please visit the front office.')
+        if st.session_state.admin_user:
+            st.warning('Looks like something may be wrong.')
+        else:
+            st.warning('Looks like something may be wrong. Please visit the front office.')
     else:
         if st.session_state.worked:
             col1, col2 = st.columns([2,1])
@@ -186,11 +189,8 @@ def show_locker_combo(locker_num):
             if col1.button(":x: Try a different combination", use_container_width=True):
                 next_combination(locker_num)
                 if active_combination(locker_num) == initial_combination(locker_num):
-                    if st.session_state.admin_user:
-                        st.warning('That was all five combinations!')
-                    else:
-                        post_locker_data(locker_num, {'Comments': 'All Combos Failed'})
-                        clear_locker_data()
+                    post_locker_data(locker_num, {'Comments': 'All Combos Failed'})
+                    clear_locker_data()
                 st.rerun()
             if col2.button(":white_check_mark: Lock Opened!", use_container_width=True):
                     post_locker_data(locker_num, {

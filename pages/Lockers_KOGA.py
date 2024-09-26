@@ -134,18 +134,31 @@ def show_locker_combo(locker_num):
             col1, col2 = st.columns([2,1])
             if st.session_state.opened == True:
                 st.markdown('---')
-                st.write('##### Yeah! Please visit the Google Form linked below to complete your registration.')
-                col1, col2, col3 = st.columns([1,5,1])
-                col2.link_button(
-                    ':memo: Locker Agreement Form',
-                    'https://docs.google.com/forms/d/e/1FAIpQLSc0jER8RakKZrZYbmKsqIurjaFj_H6d8njJZ-6DetI5lHtdZQ/viewform'
-                    , use_container_width=True)
+                if st.session_state.serialprovided:
+                    st.write('##### Yeah! Please visit the Google Form linked below to complete your registration.')
+                    col1, col2, col3 = st.columns([1,5,1])
+                    col2.link_button(
+                        ':memo: Locker Agreement Form',
+                        'https://docs.google.com/forms/d/e/1FAIpQLSc0jER8RakKZrZYbmKsqIurjaFj_H6d8njJZ-6DetI5lHtdZQ/viewform'
+                        , use_container_width=True)
+                else:
+                    sn = input_serial()
+                    col1, col2 = st.columns([1,1])
+                    if col1.button(':white_check_mark: Confirm Serial', use_container_width=True):
+                        if len(sn) > 0:
+                            post_locker_data(locker_num, {'SerialNumber': sn})
+                            clear_locker_data()
+                            st.rerun()
+                        else:
+                            col1.warning('Please enter a serial number')
+                    if col2.button(':x: Not Readable', use_container_width=True):
+                        post_locker_data(locker_num, {'SerialNumber': 'issue reading'})
+                        clear_locker_data()
+                        st.rerun()
             elif st.session_state.opened == False:
                 st.warning('Please visit the front office for assistance.')
-            st.markdown('---')
-            st.write('#### ' + '<div style="text-align:center">'+'Your Combination is'+'</div>', unsafe_allow_html=True)
-            combo = show_combination(locker_num, True)
             if st.session_state.opened == None:
+                st.markdown('---')
                 st.write('''Thank you for confirming the locker combination for our records.
                          Did the Locker open as well?''')
                 col1, col2 = st.columns([1,1])
@@ -157,6 +170,10 @@ def show_locker_combo(locker_num):
                     post_locker_data(locker_num, {'Comments': 'Cannot Open Door'})
                     clear_locker_data()
                     st.rerun()
+            st.markdown('---')
+            st.write('#### ' + '<div style="text-align:center">'+'Your Combination is'+'</div>', unsafe_allow_html=True)
+            combo = show_combination(locker_num, True)
+            
         else:
             st.markdown('---')
             st.write('#### ' + '<div style="text-align:center">'+'Combination'+'</div>', unsafe_allow_html=True)
@@ -215,6 +232,7 @@ def locker_data(locker):
         else:
             st.session_state.worked = False
             st.session_state.opened = None
+        st.session_state.serialprovided = len(st.session_state.locker_data.get('SerialNumber', '')) > 0
 
 
 def input_family():
@@ -228,6 +246,13 @@ def input_locker():
     col1, col2 = st.columns([.2,.8])
     col1.write('#### ' + '<div style="text-align:center">'+'Locker Number'+'</div>', unsafe_allow_html=True)
     val = col2.text_input('Locker Number', label_visibility='collapsed', on_change=clear_locker_data)
+    return val
+
+
+def input_serial():
+    col1, col2 = st.columns([.2,.8])
+    col1.write('#### ' + '<div style="text-align:center">'+'Lock Serial Number'+'</div>', unsafe_allow_html=True)
+    val = col2.text_input('Lock Serial Number', label_visibility='collapsed', on_change=clear_locker_data)
     return val
 
 
@@ -246,6 +271,8 @@ def run():
         st.session_state.worked = False
     if 'opened' not in st.session_state:
         st.session_state.opened = None
+    if 'serialprovided' not in st.session_state:
+        st.session_state.serialprovided = False
     # df = st.session_state.df
     if st.session_state.admin_user:
         locker = st.text_input('Locker Number', on_change=clear_locker_data)

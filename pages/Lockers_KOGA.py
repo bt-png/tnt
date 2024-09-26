@@ -176,7 +176,6 @@ def show_locker_combo(locker_num):
             st.markdown('---')
             st.write('#### ' + '<div style="text-align:center">'+'Your Combination is'+'</div>', unsafe_allow_html=True)
             combo = show_combination(locker_num, True)
-            
         else:
             st.markdown('---')
             st.write('#### ' + '<div style="text-align:center">'+'Combination'+'</div>', unsafe_allow_html=True)

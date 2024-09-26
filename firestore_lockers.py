@@ -1,5 +1,6 @@
 import json
 import streamlit as st
+import numpy as np
 import pandas as pd
 from google.cloud import firestore
 from google.oauth2 import service_account
@@ -36,6 +37,43 @@ def post_locker_data(locker_num: int, updates: dict):
             val.pop('Assigned')
         doc_ref.set(val)
         return True
+    except Exception as error:
+        st.session_state.auth_warning = 'Error: Please try again later'
+        return False
+
+
+def post_locker_combo(locker_num: int, updates: dict):
+    try:
+        doc_ref = db.collection('locker_data_KOGA').document(str(locker_num))
+        doc = doc_ref.get()
+        if doc.exists:
+            val = doc.to_dict()
+            for k, v in updates.items():
+                if k == 'Combinations':
+                    val[k] = v  
+        else:
+            val = updates
+            val.pop('Assigned')
+        doc_ref.set(val)
+        return True
+    except Exception as error:
+        st.session_state.auth_warning = 'Error: Please try again later'
+        return False
+
+
+def reset_locker_data(locker_num: int):
+    try:
+        doc_ref = db.collection('locker_data_KOGA').document(str(locker_num))
+        doc = doc_ref.get()
+        if doc.exists:
+            val = doc.to_dict()
+            val['Comments'] = np.nan
+            if 'Verified' in val:
+                val.pop('Verified')
+            doc_ref.set(val)
+            return True
+        else:
+            return False
     except Exception as error:
         st.session_state.auth_warning = 'Error: Please try again later'
         return False

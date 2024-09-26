@@ -1,8 +1,10 @@
 import streamlit as st
+import numpy as np
 import pandas as pd
 from firestore_lockers import get_locker_assignments
 from firestore_lockers import get_locker_data
 from firestore_lockers import post_locker_data
+from firestore_lockers import reset_locker_data
 from firestore_lockers import post_locker_assignments
 from firestore_lockers import revoke_locker_assignment
 from datetime import datetime, timedelta
@@ -121,6 +123,8 @@ def locker_instructions(combo):
 
 
 def show_locker_combo(locker_num):
+    # INFO
+    # st.text(st.session_state.locker_data)
     _df = pd.DataFrame()
     if st.session_state.toomanytries:
         st.warning('Looks like something may be wrong. Please visit the front office.')
@@ -196,18 +200,21 @@ def clear_locker_data():
 def locker_data(locker):
     if 'locker_data' not in st.session_state:
         st.session_state.locker_data = get_locker_data(locker)
-        # st.text(st.session_state.locker_data)
         verified = st.session_state.locker_data.get('Verified', '')
         if isinstance(verified, datetime):
             if verified.timestamp() > datetime.today().replace(year=datetime.today().year-1).timestamp():
                 st.session_state.worked = True
         comments = st.session_state.locker_data.get('Comments', '')
-        if 'No Issues' in comments:
-            st.session_state.worked = True
-        if 'All Combos Failed' in comments:
-            st.session_state.toomanytries = True
-        if 'Cannot Open Door' in comments:
+        if type(comments) is str:
+            if 'No Issues' in comments:
+                st.session_state.worked = True
+            if 'All Combos Failed' in comments:
+                st.session_state.toomanytries = True
+            if 'Cannot Open Door' in comments:
+                st.session_state.worked = False
+        else:
             st.session_state.worked = False
+            st.session_state.opened = None
 
 
 def input_family():
@@ -247,7 +254,7 @@ def run():
             family = st.session_state.df_assigned.get(str(locker), '')
             if len(family) > 0:
                 st.write(f'Assigned Family: {family}')
-                if st.button('Revoke Locker Assignment'):
+                if st.button('Revoke Family Locker Assignment'):
                     if revoke_locker_assignment(locker):
                         st.session_state.df_assigned.pop(str(locker))
                         st.rerun()
@@ -260,10 +267,12 @@ def run():
                     if post_locker_assignments(update):
                         st.session_state.df_assigned[str(locker)] = family
                         st.rerun()
+            if st.button('Reset Locker Data'):
+                reset_locker_data(locker)    
+                clear_locker_data()
+                st.rerun()
             locker_data(locker)
             show_locker_combo(locker)
-        else:
-            clear_locker_data()
     else:
         family = input_family()
         locker = input_locker()
@@ -275,7 +284,6 @@ def run():
                 locker_data(locker)
                 show_locker_combo(locker)
             else:
-                clear_locker_data()
                 st.warning('Locker number is not assigned')
             # else:
             #     st.warning('Locker number is not assigned')

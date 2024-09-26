@@ -22,7 +22,7 @@ h1, h2 {
 
 h3 {
     font-family: 'Alegreya Sans SC', sans-serif !important;
-    font-size: 35px !important; */
+    font-size: 35px !important;
     color: light-dark(#404040, #CCCCCC) !important  /*NEUTRAL-ONYX*/;
     /*background-color:blanchedalmond !important;*/
 }
@@ -34,7 +34,7 @@ h4 {
     /*background-color:blanchedalmond !important;*/
 }
 
-p, input, button[data-baseweb!=tab], ul, li, [class^=st-c], [class^=st-b], section[role=button], [class=vg-tooltip] {
+p, input, button[data-baseweb=tab], ul, li, [class^=st-c], [class^=st-b], section[role=button], [class=vg-tooltip] {
     font-family: 'Proza Libre', sans-serif !important;
     font-style: normal !important;
     color: light-dark(#404040, #CCCCCC) !important/*NEUTRAL-ONYX*/;
@@ -67,6 +67,8 @@ div[class=glideDataEditor], div[glideDataEditor], div[data-testid=stFullScreenFr
     font-family: 'Dancing Script', sans-serif !important;
 }
 
-div[role=alert] {
+div[role=alert] p{
     text-align: center !important;
+    font-size: 36px !important;
+    font-style: bold !important;
 }

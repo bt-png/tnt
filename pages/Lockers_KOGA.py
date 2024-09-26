@@ -235,11 +235,14 @@ def locker_data(locker):
         st.session_state.serialprovided = len(st.session_state.locker_data.get('SerialNumber', '')) > 0
 
 
-def input_family():
+def input_family(default=''):
     col1, col2 = st.columns([.2,.8])
     col1.write('#### ' + '<div style="text-align:center">'+'Family Name'+'</div>', unsafe_allow_html=True)
-    val = col2.text_input('Family Name', label_visibility='collapsed')
-    return val
+    if len(default) > 0:
+        col2.text_input('Family Name', label_visibility='collapsed', value=default, disabled=True)
+    else:
+        val = col2.text_input('Family Name', label_visibility='collapsed')
+        return val
 
 
 def input_locker():
@@ -275,18 +278,18 @@ def run():
         st.session_state.serialprovided = False
     # df = st.session_state.df
     if st.session_state.admin_user:
-        locker = st.text_input('Locker Number', on_change=clear_locker_data)
+        locker = input_locker()
         if locker != '' and locker.isnumeric:
             locker = int(locker)
             family = st.session_state.df_assigned.get(str(locker), '')
             if len(family) > 0:
-                st.write(f'Assigned Family: {family}')
+                input_family(family)
                 if st.button('Revoke Family Locker Assignment'):
                     if revoke_locker_assignment(locker):
                         st.session_state.df_assigned.pop(str(locker))
                         st.rerun()
             else:
-                family = st.text_input('Family Name')
+                family = input_family()
                 if st.button('Assign Locker to Family'):
                     update = {}
                     val = {'Assigned': family}

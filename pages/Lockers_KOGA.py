@@ -148,11 +148,11 @@ def show_locker_combo(locker_num):
                 st.write('''Thank you for confirming the locker combination for our records.
                          Did the Locker open as well?''')
                 col1, col2 = st.columns([1,1])
-                if col1.button(':white_check_mark: Yes, no issues'):
+                if col1.button(':white_check_mark: Yes, no issues', use_container_width=True):
                     post_locker_data(locker_num, {'Comments': 'Combo Verified, No Issues'})
                     clear_locker_data()
                     st.rerun()
-                if col2.button(':x: No, its stuck'):
+                if col2.button(':x: No, its stuck', use_container_width=True):
                     post_locker_data(locker_num, {'Comments': 'Cannot Open Door'})
                     clear_locker_data()
                     st.rerun()
@@ -165,13 +165,13 @@ def show_locker_combo(locker_num):
                        If the lock continues to not unlock, let's try a different combination.
                        ''')
             col1, col2 = st.columns([1,1])
-            if col1.button(":x: Try a different combination"):
+            if col1.button(":x: Try a different combination", use_container_width=True):
                 next_combination(locker_num)
                 if active_combination(locker_num) == initial_combination(locker_num):
                     post_locker_data(locker_num, {'Comments': 'All Combos Failed'})
                     clear_locker_data()
                 st.rerun()
-            if col2.button(":white_check_mark: Lock Opened!"):
+            if col2.button(":white_check_mark: Lock Opened!", use_container_width=True):
                     post_locker_data(locker_num, {
                         'Comments': 'Combo Verified',
                         'Current': active_combination(locker_num),

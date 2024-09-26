@@ -51,7 +51,7 @@ input {
 
 button[kind=secondary] p, section[role=button], div[data-testid=stLinkButton] p{
     font-family: 'Proza Libre', sans-serif !important;
-    font-size: 24px !important;
+    font-size: 18px !important;
     font-style: bold !important;
     color: light-dark(#404040, #CCCCCC) !important/*NEUTRAL-ONYX*/;
     /*background-color:aquamarine !important;*/

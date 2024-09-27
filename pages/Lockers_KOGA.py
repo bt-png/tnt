@@ -286,20 +286,27 @@ def run():
             family = st.session_state.df_assigned.get(str(locker), '')
             if len(family) > 0:
                 input_family(family)
-                if st.button('Revoke Family Locker Assignment'):
+                if st.button(':x: Revoke Family Locker Assignment'):
                     if revoke_locker_assignment(locker):
                         st.session_state.df_assigned.pop(str(locker))
                         st.rerun()
             else:
                 family = input_family()
-                if st.button('Assign Locker to Family'):
+                if st.button(':white_check_mark: Assign Locker to Family'):
                     update = {}
                     val = {'Assigned': family}
                     update[str(locker)] = val
                     if post_locker_assignments(update):
                         st.session_state.df_assigned[str(locker)] = family
                         st.rerun()
-            if st.button('Reset Locker Data'):
+                if st.button(':x: Mark "Out of Order"'):
+                    update = {}
+                    val = {'Assigned': "Out of Order"}
+                    update[str(locker)] = val
+                    if post_locker_assignments(update):
+                        st.session_state.df_assigned[str(locker)] = "Out of Order"
+                        st.rerun()
+            if st.button(':unlock: Reset Locker Data'):
                 reset_locker_data(locker)    
                 clear_locker_data()
                 st.rerun()

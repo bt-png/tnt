@@ -64,11 +64,17 @@ if __name__ == '__main__':
         # Assigned Lockers
         df_assigned = pd.DataFrame.from_dict(st.session_state.df_assigned, orient='index', columns=['Family'])
         df_assigned.index.name = 'Locker'
-        st.write('Active Locker Assignments')
-        st.dataframe(df_assigned, column_config={
+        col1, col2 = st.columns([1,1])
+        col1.write(f"{len(df_assigned[df_assigned['Family'] != 'Out of Order'])} Active Locker Assignments")
+        col1.dataframe(df_assigned[df_assigned['Family'] != 'Out of Order'], column_config={
             'Locker': st.column_config.NumberColumn(width='medium'),
             'Family': st.column_config.TextColumn(width='medium')
             })
+        col2.write(f"{len(df_assigned[df_assigned['Family'] == 'Out of Order'])} Out of Order")
+        col2.dataframe(df_assigned[df_assigned['Family'] == 'Out of Order'], column_config={
+            'Locker': st.column_config.NumberColumn(width='medium')
+            },
+            column_order=['Locker'])
         st.markdown('---')
         col1, col2, col3 = st.columns([1,5,1])
         # col2.link_button('GoTo Locker Combination Page', 'pages/Lockers_KOGA', use_container_width=True)

@@ -307,7 +307,7 @@ def run():
                     if post_locker_assignments(update):
                         st.session_state.df_assigned[str(locker)] = "Out of Order"
                         st.rerun()
-            if st.button(':unlock: Reset Locker Data'):
+            if st.button(':repeat: Reset Locker Data'):
                 reset_locker_data(locker)    
                 clear_locker_data()
                 st.rerun()

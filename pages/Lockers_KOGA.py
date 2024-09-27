@@ -280,6 +280,7 @@ def run():
         st.session_state.serialprovided = False
     # df = st.session_state.df
     if st.session_state.admin_user:
+        st.write('### ' + '<div style="text-align:center">'+'Administrative View'+'</div>', unsafe_allow_html=True)
         locker = input_locker()
         if locker != '' and locker.isnumeric:
             locker = int(locker)

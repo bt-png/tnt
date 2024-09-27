@@ -33,6 +33,7 @@ if __name__ == '__main__':
     )
     # if 'df' not in st.session_state:
     #     st.session_state.df = load_df()
+    st.write('### ' + '<div style="text-align:center">'+'Administrative View'+'</div>', unsafe_allow_html=True)
     with open('style_lockers.css') as css:
         st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
     if 'admin_user' not in st.session_state:

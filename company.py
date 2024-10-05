@@ -49,6 +49,7 @@ def loadarchive(archstr):
     pickled_bit = getclientArchive(archstr, st.session_state['company'])
     st.session_state['tipdata'] = pickle.loads(pickled_bit)
     st.session_state['updatedsomething'] = True
+    st.session_state['loadedarchive'] = archstr
     publish()
     # clientUpdateDict(st.session_state['company'], 'tipdata', pickled_bit)
     st.success('Archive Loaded')

@@ -249,10 +249,12 @@ def tipDisplayInfo(idx, rates):
     if hrs != 0:
         if st.session_state['PoolDollarToggle']:
             order = ['Employee Name', 'Pool Tip']
+            config = {'Pool Tip': st.column_config.NumberColumn('Tips')}
         else:
             order = ['Employee Name', 'Regular']
+            config = {'Regular': st.column_config.NumberColumn('Hours')}
         st.dataframe(df_hrs.style.format('{:.2f}', subset=['Regular']).format('${:.2f}', subset=['Pool Tip']),
-                 hide_index=False, column_order=order)
+                 hide_index=False, column_order=order, column_config=config)
     rates.append(rate)
 
 
@@ -316,7 +318,8 @@ def applyDefaultSplits():
         data = st.session_state['tipdata']['RevisedDefaultWorkPositions']
     else:
         data = pd.DataFrame.from_dict(clientGetValue(st.session_state['company'], 'positionsplits'))
-    df_revised = st.session_state['tipdata']['ORIGINAL_WorkedHoursDataUsedForTipping'].copy()
+    # df_revised = st.session_state['tipdata']['ORIGINAL_WorkedHoursDataUsedForTipping'].copy()
+    df_revised = st.session_state['tipdata']['DEFAULT_WorkedHoursDataUsedForTipping'].copy()
     df_revised.drop(['OT', 'Double OT'], axis=1, inplace=True)
     df_revised.drop(df_revised[df_revised['Regular'].isnull()].index, inplace=True)
     if len(data) > 0:
@@ -334,36 +337,43 @@ def applyDefaultSplits():
         df_remove = df_remove.drop(columns=['New Position'])
         df_revised = pd.concat([df_revised, df_add, df_remove], ignore_index=True)
     tipHrsSplit(df_revised)
-    st.session_state['tipdata']['DEFAULT_WorkedHoursDataUsedForTipping'] = df_revised.copy()
+    st.session_state['tipdata']['WorkedHoursDataUsedForTipping'] = df_revised.copy()
+    # st.session_state['tipdata']['DEFAULT_WorkedHoursDataUsedForTipping'] = df_revised.copy()
     return
 
 
 def reviseDefaultSplits():
-    st.caption('Default Splits for Working Shifts')
-    positions = st.session_state['tipdata']['Available Work Positions']
-    if 'RevisedDefaultWorkPositions' not in st.session_state['tipdata']:
-        data = pd.DataFrame.from_dict(clientGetValue(st.session_state['company'], 'positionsplits'))
-        st.session_state['tipdata']['RevisedDefaultWorkPositions'] = data
-    config = {
-        'from': st.column_config.SelectboxColumn('From Old Position', width='medium', options=positions, required=True),
-        'to': st.column_config.SelectboxColumn('to New Position', width='medium', options=positions, required=True),
-        'perc': st.column_config.NumberColumn('Apply Percentage to Worked hrs (%)', required=True),
-        'reason': st.column_config.TextColumn('Reason', width='large', required=True, default='Assigned Split Shifts')
-    }
-    edited_data = st.data_editor(
-        st.session_state['tipdata']['RevisedDefaultWorkPositions'],
-        column_config=config, num_rows='dynamic', hide_index=True)
-    # edited_data = edited_data.dropna()
-    edited_data.reset_index(drop=True, inplace=True)
-    syncDataEditor(edited_data, 'RevisedDefaultWorkPositions')
-    # if not edited_data.equals(st.session_state['tipdata']['RevisedDefaultWorkPositions']):
-    #     updated()
-    #     st.session_state['tipdata']['updated_RevisedDefaultWorkPositions'] = edited_data
+    with st.expander('Revise Default Splits for Working Shifts', expanded=False):
+        # st.caption('Default Splits for Working Shifts')
+        positions = st.session_state['tipdata']['Available Work Positions']
+        if 'RevisedDefaultWorkPositions' not in st.session_state['tipdata']:
+            data = pd.DataFrame.from_dict(clientGetValue(st.session_state['company'], 'positionsplits'))
+            st.session_state['tipdata']['RevisedDefaultWorkPositions'] = data
+        config = {
+            'from': st.column_config.SelectboxColumn('From Old Position', width='medium', options=positions, required=True),
+            'to': st.column_config.SelectboxColumn('to New Position', width='medium', options=positions, required=True),
+            'perc': st.column_config.NumberColumn('Apply Percentage to Worked hrs (%)', required=True),
+            'reason': st.column_config.TextColumn('Reason', width='large', required=True, default='Assigned Split Shifts')
+        }
+        edited_data = st.data_editor(
+            st.session_state['tipdata']['RevisedDefaultWorkPositions'],
+            column_config=config, num_rows='dynamic', hide_index=True)
+        # edited_data = edited_data.dropna()
+        edited_data.reset_index(drop=True, inplace=True)
+        syncDataEditor(edited_data, 'RevisedDefaultWorkPositions')
+        # if not edited_data.equals(st.session_state['tipdata']['RevisedDefaultWorkPositions']):
+        #     updated()
+        #     st.session_state['tipdata']['updated_RevisedDefaultWorkPositions'] = edited_data
 
 
 def revisePositionsWorked():
-    st.caption('Revise Individual Working Shift Positions')
-    df = st.session_state['tipdata']['DEFAULT_WorkedHoursDataUsedForTipping'].copy()
+    st.write('#### Create Split Shifts')
+    st.caption('''
+               Use this to clarify split shifts by moving a specific number of hours into a different pool.
+               Alternatey you can make an employees hours inelligible.
+               ''')
+    df = st.session_state['tipdata']['ORIGINAL_WorkedHoursDataUsedForTipping'].copy()
+    # df = st.session_state['tipdata']['DEFAULT_WorkedHoursDataUsedForTipping'].copy()
     if 'RevisedWorkPositions' not in st.session_state['tipdata']:
         tmpdf = pd.DataFrame(columns=['name', 'hrs', 'from', 'to', 'reason'])
         tmpdf.reset_index(drop=True, inplace=True)
@@ -399,7 +409,8 @@ def revisePositionsWorked():
     df_combined = pd.concat([df, df_revised], ignore_index=True).copy()
     tipHrsSplit(df_combined)
     df_combined = applyColumnSort(df_combined, ['Tip Pool', 'Employee Name', 'Regular', 'Position'])
-    st.session_state['tipdata']['WorkedHoursDataUsedForTipping'] = df_combined
+    st.session_state['tipdata']['DEFAULT_WorkedHoursDataUsedForTipping'] = df_combined
+    # st.session_state['tipdata']['WorkedHoursDataUsedForTipping'] = df_combined
     # st.dataframe(st.session_state['tipdata']['WorkedHoursDataUsedForTipping'])
 
 
@@ -422,20 +433,21 @@ def filter_WorkdedHoursDataUsedForTipping():
         col3.caption('Revised Worked Shifts (includes default splits)')
     col1, col2, col3 = st.columns([2, 5, 5])
     user_cat_input = col1.multiselect(
-        f"Choose 'Employee Name' to Apply Filter",
-        ogrouped['Employee Name'].unique()
+        f"Employee Shift Search",
+        ogrouped['Employee Name'].unique(), placeholder='Select Name'
         )
     if len(user_cat_input) > 0:
         ogrouped = ogrouped[ogrouped['Employee Name'].isin(user_cat_input)]
         grouped = grouped[grouped['Employee Name'].isin(user_cat_input)]
-    col2.dataframe(ogrouped, hide_index=True, height=250, column_config={
+    Height = int(35.2 * (min(10, len(ogrouped) + 1)))
+    col2.dataframe(ogrouped, hide_index=True, height=Height, column_config={
         'Employee Name': st.column_config.TextColumn(),
         'Position': st.column_config.TextColumn(),
         'Tip Pool': st.column_config.TextColumn(),
         'Regular': st.column_config.NumberColumn(label='Hours'),
         })
     if not ogrouped.equals(grouped):
-        col3.dataframe(grouped, hide_index=True, height=250, column_config={
+        col3.dataframe(grouped, hide_index=True, height=Height, column_config={
             'Employee Name': st.column_config.TextColumn(),
             'Position': st.column_config.TextColumn(),
             'Tip Pool': st.column_config.TextColumn(),
@@ -444,25 +456,25 @@ def filter_WorkdedHoursDataUsedForTipping():
         col3.caption('The Revised table is utilized for tipping Pools')
 
 
-def HouseTip():
-    st.caption('House Tip')
-    if 'housetipsforemployees' not in st.session_state['tipdata']:
-        df = pd.DataFrame({'Employee Name': st.session_state['tipdata']['Employees Worked']})
-        df['House Tip'] = 0.0
-        st.session_state['tipdata']['housetipsforemployees'] = df.copy()
-    df = st.session_state['tipdata']['housetipsforemployees'].copy()
-    current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
-    Height = int(35.2 * (len(current_list_of_employees) + 1))
-    edited_data = st.data_editor(
-        st.session_state['tipdata']['housetipsforemployees'][st.session_state['tipdata']['housetipsforemployees']['Employee Name'].isin(current_list_of_employees)],
-        hide_index=True, num_rows='fixed', height=Height,
-        column_config={
-            'Employee Name': st.column_config.TextColumn(disabled=True),
-            'House Tip': st.column_config.NumberColumn(format='$%.2f')
-        }
-        )
-    df.update(edited_data)
-    syncDataEditor(df, 'housetipsforemployees')
+# def HouseTip():
+#     st.caption('House Tip')
+#     if 'housetipsforemployees' not in st.session_state['tipdata']:
+#         df = pd.DataFrame({'Employee Name': st.session_state['tipdata']['Employees Worked']})
+#         df['House Tip'] = 0.0
+#         st.session_state['tipdata']['housetipsforemployees'] = df.copy()
+#     df = st.session_state['tipdata']['housetipsforemployees'].copy()
+#     current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
+#     Height = int(35.2 * (len(current_list_of_employees) + 1))
+#     edited_data = st.data_editor(
+#         st.session_state['tipdata']['housetipsforemployees'][st.session_state['tipdata']['housetipsforemployees']['Employee Name'].isin(current_list_of_employees)],
+#         hide_index=True, num_rows='fixed', height=Height,
+#         column_config={
+#             'Employee Name': st.column_config.TextColumn(disabled=True),
+#             'House Tip': st.column_config.NumberColumn(format='$%.2f')
+#         }
+#         )
+#     df.update(edited_data)
+#     syncDataEditor(df, 'housetipsforemployees')
 
 
 def TipsSum():
@@ -513,7 +525,7 @@ def TipsSum():
 
 
 def ByPosition():
-    # st.caption('Tips by Position')
+    st.write('#### Employee Tips by Position')
     removeNA = False
     df = st.session_state['tipdata']['WorkedHoursDataUsedForTipping'].copy()
     if removeNA:
@@ -613,6 +625,8 @@ def run():
         st.header(st.session_state['company'])
     with col2:
         st.caption('')
+        if 'loadedarchive' in st.session_state:
+            st.caption(f'Loaded from Archive: {st.session_state["loadedarchive"]}')
         publishbutton = st.empty()
     if 'df_work_hours' in st.session_state['tipdata']:
         if 'ORIGINAL_WorkedHoursDataUsedForTipping' not in st.session_state['tipdata']:
@@ -621,43 +635,45 @@ def run():
             # st.markdown('---')
             # st.markdown('### Tip Pools & Distribution Percentages')
             # tipAmounts()
-            st.markdown('---')
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                tipPoolPositions()
             # with col2:
-                
             st.markdown('---')
             tipsummary_container = st.container()
             col1, col2 = st.columns([8,2])
-            if col2.radio('Display quick Pool as', ['Hours', 'Dollars']) == 'Dollars':
+            if col2.radio('Display quick Pool as', ['Dollars', 'Hours']) == 'Dollars':
                 st.session_state['PoolDollarToggle'] = True
             else:
                 st.session_state['PoolDollarToggle'] = False
             # col2.toggle('Pool $ Value', False, 'PoolDollarToggle')
             st.markdown('---')
-            st.markdown('### Revise Working')
-            reviseDefaultSplits()
-            applyDefaultSplits()
+            st.markdown('### Shift Revisions')
+            filtercontainer = st.empty()
             revisePositionsWorked()
+            reviseDefaultSplits()
+            col5, col6 = st.columns([3,6])
+            tippingpositionscontainer = col5.container(border=False)
+            tippingpositionssummarycontainer = col6.container(border=False)
+            applyDefaultSplits()
             removeHelperPools()
+            
             # applyDefaultSplits()
-            filter_WorkdedHoursDataUsedForTipping()
+            with filtercontainer:
+                filter_WorkdedHoursDataUsedForTipping()
             st.markdown('---')
             st.markdown('### Tip Pool Distribution')
             applyTipRatestoHoursWorked()
-            col1, col2, col3 = st.columns([2, 4, 5])
-            with col1:
-                HouseTip()
-            with col2:
+            col11, col12 = st.columns([5, 6])
+            # with col1:
+            #     HouseTip()
+            with col11:
                 st.caption('Employee Tips Summary')
                 TipsSum()
-            with col3:
-                st.caption('Tips by Position')
+            with tippingpositionscontainer:
+                tipPoolPositions()
+            with tippingpositionssummarycontainer:
                 ByPosition()
-            st.caption('Percent Change from House Tip')
-            TipChangeSummary()
-            st.markdown('---')
+            with col12:  
+                st.caption('Percent Change from House Tip')
+                TipChangeSummary()
             with tipsummary_container:
                 # this needs to be last item so it can sum up all the changes from above
                 tipPercentsSummary()

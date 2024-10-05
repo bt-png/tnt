@@ -45,6 +45,7 @@ def authenticated_menu():
     #     )
     st.sidebar.markdown('---')
     st_auth.logout(st.session_state['auth'])
+    st.sidebar.markdown('reference the [SOP](https://docs.google.com/document/d/15JG3qYbkNIFvSfBfSI-DMCrhkaO6uVV92cw2xg55URo/edit?usp=sharing)')
     st.sidebar.markdown('---')
     # if len(st.session_state['company']) > 0:
     #     st.sidebar.header('')

@@ -96,9 +96,10 @@ def loadFilestoSessionState(files):
                 'Employee ID', 'Unpaid Breaks', 'Hourly Rate',
                 'Total', 'Total Hours'
                 ], inplace=True)  # Drop data with numbers to not alter the shift counts
+            dataframe.replace(0, np.nan, inplace=True)
+            # dataframe.insert(1, 'Days Worked', dataframe.count(axis=1, numeric_only=True))
             dataframe.insert(0, 'Employee Name [Position]', dataframe['Employee Name'] + ' [' + dataframe['Position'] + ']')
             dataframe.sort_values(by=['Employee Name [Position]'], inplace=True)
-            dataframe.replace(0, np.nan, inplace=True)
             dataframe.insert(1, 'Shifts Worked', dataframe.count(axis=1, numeric_only=True))
             dataframe.drop(columns=[
                 'Schedule', 'Site', 'Position', 'First Name', 'Last Name', 'Email'
@@ -108,6 +109,7 @@ def loadFilestoSessionState(files):
                 st.session_state['updatedsomething'] = True
                 st.session_state['tipdata']['df_schedule'] = dataframe.copy()
                 loadShiftsWorked()
+            st.dataframe(dataframe)
         elif 'First Name' == dataframe.columns[0]:
             # st.session_state['val'] = file
             dataframe.insert(0,'Employee Name', dataframe['First Name'] + ' ' + dataframe['Last Name'])
@@ -138,80 +140,80 @@ def allDataFramesLoaded():
     return False
 
 
-def gardenDatesPicker():
-    st.markdown('---')
-    st.write('Tips related to Garden Events')
-    if 'GardenDates' not in st.session_state['tipdata']:
-    #     data = st.session_state['tipdata']['GardenDates']
-    # else:
-        data = pd.DataFrame({'Dates': []})
-        data['Dates'] = data['Dates'].astype('datetime64[as]')
-        st.session_state['tipdata']['GardenDates'] = data
-    dfDates = st.data_editor(st.session_state['tipdata']['GardenDates'], num_rows='dynamic', key='GardenDates', column_config={
-        'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
-        }).dropna()
-    dfDates.reset_index(drop=True, inplace=True)
-    syncDataEditor(dfDates.copy(), 'GardenDates')
-    # if 'GardenDates' in st.session_state['tipdata']:
-    #     if st.session_state['tipdata']['GardenDates']['Dates'].to_list() != dfDates['Dates'].to_list():
-    #         st.session_state['updatedsomething'] = True
-            # # warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
-            # st.session_state['tipdata']['GardenDates'] = dfDates.copy()
-    # elif not dfDates.empty:
-    #    st.session_state['updatedsomething'] = True
-    #    warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
-    #    st.session_state['tipdata']['GardenDates'] = dfDates.copy()
-    try:
-        dfDates['str'] = ["{:%m/%d/%Y}".format(date) for date in dfDates['Dates']]
-    except Exception:
-        dfDates['str'] = None
-    dfDates['str'] = dfDates['str'].astype(str)
-    df = st.session_state['tipdata']['df_sales'].copy()
-    df = df.reset_index()
-    df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
-    tip = round(df['Tip'].sum(), 2)
-    st.write(f"Tips generated from selected dates = ${format(tip,',')}")
-    # if 'Extra Garden Tip' not in st.session_state['tipdata']:
-    #     st.session_state['tipdata']['Extra Garden Tip'] = 0.0
-    extratip = float(st.text_input(
-        'Venmo/Cash',
-        value=st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
-        key='extragardentips',
-        on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
-        ))
-    serviceadjustment = float(st.text_input(
-        'Adjustment (+/-)',
-        value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
-        key='serviceadjustment',
-        on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
-        ))
-    # if extratip != st.session_state['tipdata']['Extra Garden Tip']:
-    #     warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
-    #     st.session_state['tipdata']['Extra Garden Tip'] = extratip
-    totaltip = round(tip + extratip, 2)
-    # st.write(st.session_state['tipdata']['GardenDates'])
-    if not dfDates.equals(st.session_state['tipdata']['GardenDates']):
-        st.session_state['tipdata']['Base Garden Tip'] = tip
-    # if 'Event Tip' not in st.session_state['tipdata']:
-    # baseGardenTip = st.session_state['tipdata'].get('Base Garden Tip', 0.00)
-    # extraGardenTip = st.session_state['tipdata'].get('Extra Garden Tip', 0.00)
-    eventTip = tip + extratip
-    st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
-    # if 'Regular Pool' not in st.session_state['tipdata']:
-    dfSales = st.session_state['tipdata']['df_sales']
-    rawTip = round(dfSales['Tip'].sum(), 2)
-    st.session_state['tipdata']['Raw Pool'] = rawTip
-    totalTip = round(rawTip + serviceadjustment, 2)
-    st.session_state['tipdata']['Total Pool'] = totalTip
-    # totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
-    baseRegularTip = totalTip - tip
-    st.session_state['tipdata']['Regular Pool'] = round(baseRegularTip, 2)
+# def gardenDatesPicker():
+#     st.markdown('---')
+#     st.write('Tips related to Garden Events')
+#     if 'GardenDates' not in st.session_state['tipdata']:
+#     #     data = st.session_state['tipdata']['GardenDates']
+#     # else:
+#         data = pd.DataFrame({'Dates': []})
+#         data['Dates'] = data['Dates'].astype('datetime64[as]')
+#         st.session_state['tipdata']['GardenDates'] = data
+#     dfDates = st.data_editor(st.session_state['tipdata']['GardenDates'], num_rows='dynamic', key='GardenDates', column_config={
+#         'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
+#         }).dropna()
+#     dfDates.reset_index(drop=True, inplace=True)
+#     syncDataEditor(dfDates.copy(), 'GardenDates')
+#     # if 'GardenDates' in st.session_state['tipdata']:
+#     #     if st.session_state['tipdata']['GardenDates']['Dates'].to_list() != dfDates['Dates'].to_list():
+#     #         st.session_state['updatedsomething'] = True
+#             # # warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
+#             # st.session_state['tipdata']['GardenDates'] = dfDates.copy()
+#     # elif not dfDates.empty:
+#     #    st.session_state['updatedsomething'] = True
+#     #    warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
+#     #    st.session_state['tipdata']['GardenDates'] = dfDates.copy()
+#     try:
+#         dfDates['str'] = ["{:%m/%d/%Y}".format(date) for date in dfDates['Dates']]
+#     except Exception:
+#         dfDates['str'] = None
+#     dfDates['str'] = dfDates['str'].astype(str)
+#     df = st.session_state['tipdata']['df_sales'].copy()
+#     df = df.reset_index()
+#     df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
+#     tip = round(df['Tip'].sum(), 2)
+#     st.write(f"Tips generated from selected dates = ${format(tip,',')}")
+#     # if 'Extra Garden Tip' not in st.session_state['tipdata']:
+#     #     st.session_state['tipdata']['Extra Garden Tip'] = 0.0
+#     extratip = float(st.text_input(
+#         'Venmo/Cash',
+#         value=st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
+#         key='extragardentips',
+#         on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
+#         ))
+#     serviceadjustment = float(st.text_input(
+#         'Adjustment (+/-)',
+#         value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
+#         key='serviceadjustment',
+#         on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
+#         ))
+#     # if extratip != st.session_state['tipdata']['Extra Garden Tip']:
+#     #     warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
+#     #     st.session_state['tipdata']['Extra Garden Tip'] = extratip
+#     totaltip = round(tip + extratip, 2)
+#     # st.write(st.session_state['tipdata']['GardenDates'])
+#     if not dfDates.equals(st.session_state['tipdata']['GardenDates']):
+#         st.session_state['tipdata']['Base Garden Tip'] = tip
+#     # if 'Event Tip' not in st.session_state['tipdata']:
+#     # baseGardenTip = st.session_state['tipdata'].get('Base Garden Tip', 0.00)
+#     # extraGardenTip = st.session_state['tipdata'].get('Extra Garden Tip', 0.00)
+#     eventTip = tip + extratip
+#     st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
+#     # if 'Regular Pool' not in st.session_state['tipdata']:
+#     dfSales = st.session_state['tipdata']['df_sales']
+#     rawTip = round(dfSales['Tip'].sum(), 2)
+#     st.session_state['tipdata']['Raw Pool'] = rawTip
+#     totalTip = round(rawTip + serviceadjustment, 2)
+#     st.session_state['tipdata']['Total Pool'] = totalTip
+#     # totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
+#     baseRegularTip = totalTip - tip
+#     st.session_state['tipdata']['Regular Pool'] = round(baseRegularTip, 2)
 
 
 def upload():
     col1, col2 = st.columns([1, 1])
-    with col1.popover('Upload New Files'):
-        files = st.file_uploader('Upload Files', type=['csv', 'xlsx'], accept_multiple_files=True, key='fileuploader')
+    with col1.popover('Upload 3 Files'):
+        files = st.file_uploader('Upload 3 Files', type=['csv', 'xlsx'], accept_multiple_files=True, key='fileuploader')
         if len(files) > 0:
             loadFilestoSessionState(files)
             if allDataFramesLoaded():
@@ -234,23 +236,27 @@ def showdata():
         })
         syncDataEditor(edited_data, 'work_shifts')
         col2.write('Raw Data')
+        # df_tmp_sch = st.session_state['tipdata']['df_schedule']
         col2.dataframe(st.session_state['tipdata']['df_schedule'])
+        # dfdays = pd.DataFrame({})
+        # dfdays['Employee Name'] = df_tmp_sch['Employee Name'].unique()
+        # st.dataframe(dfdays)
     if st.session_state['tipdata']['df_sales'] is not None:
         st.markdown('---')
         st.markdown('### Sales Data')
-        col1, col2 = st.columns([4, 6])
-        with col1:
-            st.write(f"Total Tipping Pool from Raw Data= ${format(st.session_state['tipdata']['Raw Pool'], ',')}")
-            extratips = st.empty()
-            adjustments = st.empty()
-            gardenDatesPicker()
-            if st.session_state['tipdata'].get('Extra Garden Tip', 0.00) != 0.00:
-                total = st.session_state['tipdata']['Raw Pool'] + st.session_state['tipdata']['Extra Garden Tip']
-                total += st.session_state['tipdata'].get('Service Charge Adjustment', 0.00)
-                extratips.write(f"New Tipping Pool = ${format(round(total, 2), ',')}")
+        # col1, col2 = st.columns([4, 6])
+        # with col1:
+            # st.write(f"Total Tipping Pool from Raw Data= ${format(st.session_state['tipdata']['Raw Pool'], ',')}")
+            # extratips = st.empty()
+            # adjustments = st.empty()
+            # gardenDatesPicker()
+            # if st.session_state['tipdata'].get('Extra Garden Tip', 0.00) != 0.00:
+            #     total = st.session_state['tipdata']['Raw Pool'] + st.session_state['tipdata']['Extra Garden Tip']
+            #     total += st.session_state['tipdata'].get('Service Charge Adjustment', 0.00)
+            #     extratips.write(f"New Tipping Pool = ${format(round(total, 2), ',')}")
 
-        col2.write('Raw Data')
-        col2.dataframe(st.session_state['tipdata']['df_sales'])
+        st.write('Raw Data')
+        st.dataframe(st.session_state['tipdata']['df_sales'])
     if st.session_state['tipdata']['df_work_hours'] is not None:
         st.markdown('---')
         st.markdown('### Work Hours Data')
@@ -283,6 +289,8 @@ def run():
             # st.session_state['updatetipdata'] = True
     with col2:
         st.caption('')
+        if 'loadedarchive' in st.session_state:
+            st.caption(f'Loaded from Archive: {st.session_state["loadedarchive"]}')
         publishbutton = st.empty()
         if st.button('Clear Existing Data'):
             st.session_state['updatedsomething'] = True
@@ -296,6 +304,24 @@ def run():
             if publishbutton.button('Publish Data', key='fromtipping0'):
                 publish()
                 # st.switch_page("pages/tipping0.py")
+    else:
+        st.markdown('---')
+        st.markdown('''
+                    ### Instructions: 
+                    #### Import 3 Files:  
+
+                    **from When I Work** 
+                    1. Timesheets for pay period (staff hours)  
+                    2. Scheduler for pay period (chef shifts)   
+
+                    **from Square Reports**  
+                    3. Sales summary (broken daily) for time period  
+
+                    #### Reminders:
+                    - Once those are loaded - you can complete steps A-C using the 
+                    [SOP](https://docs.google.com/document/d/15JG3qYbkNIFvSfBfSI-DMCrhkaO6uVV92cw2xg55URo/edit?usp=sharing).  
+                    - You can publish your work to update tables, please do so before moving to new step.
+                    ''')
 
 
 if __name__ == '__main__':

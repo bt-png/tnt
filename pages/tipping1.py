@@ -167,9 +167,14 @@ def helperPool():
     with col2:
         if len(st.session_state['tipdata']['Helper Pool Employees']) > 0:
             # st.markdown('#### Distribute')
-            pool = float(st.text_input('#### Helper Pool ($)',
+            pool = st.text_input('#### Helper Pool ($)',
                             value=st.session_state['tipdata'].get('Helper Pool', 0.00),
-                            key='HelperPool0', on_change=syncInput, args=('HelperPool0', 'Helper Pool')))
+                            key='HelperPool0', on_change=syncInput, args=('HelperPool0', 'Helper Pool'))
+            try:
+                pool = float(pool)
+            except Exception:
+                pool = 0.0
+                st.session_state['tipdata']['Helper Pool'] = pool
             if pool > 0:
                 col10, col20 = st.columns([1,1])
                 sliderenabled = False
@@ -198,6 +203,109 @@ def helperPool():
             st.session_state['tipdata']['Helper Draw Regular'] = 0
 
 
+def gardenDatesPicker():
+    st.markdown('---')
+    st.write('Tips related to Garden Events')
+    if 'GardenDates' not in st.session_state['tipdata']:
+    #     data = st.session_state['tipdata']['GardenDates']
+    # else:
+        data = pd.DataFrame({'Dates': []})
+        data['Dates'] = data['Dates'].astype('datetime64[as]')
+        st.session_state['tipdata']['GardenDates'] = data
+    dfDates = st.data_editor(st.session_state['tipdata']['GardenDates'], num_rows='dynamic', key='GardenDates', column_config={
+        'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
+        }).dropna()
+    dfDates.reset_index(drop=True, inplace=True)
+    syncDataEditor(dfDates.copy(), 'GardenDates')
+    # if 'GardenDates' in st.session_state['tipdata']:
+    #     if st.session_state['tipdata']['GardenDates']['Dates'].to_list() != dfDates['Dates'].to_list():
+    #         st.session_state['updatedsomething'] = True
+            # # warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
+            # st.session_state['tipdata']['GardenDates'] = dfDates.copy()
+    # elif not dfDates.empty:
+    #    st.session_state['updatedsomething'] = True
+    #    warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
+    #    st.session_state['tipdata']['GardenDates'] = dfDates.copy()
+    try:
+        dfDates['str'] = ["{:%m/%d/%Y}".format(date) for date in dfDates['Dates']]
+    except Exception:
+        dfDates['str'] = None
+    dfDates['str'] = dfDates['str'].astype(str)
+    df = st.session_state['tipdata']['df_sales'].copy()
+    df = df.reset_index()
+    df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
+    tip = round(df['Tip'].sum(), 2)
+    st.write(f"Tips generated from selected dates = ${format(tip,',')}")
+    # if 'Extra Garden Tip' not in st.session_state['tipdata']:
+    #     st.session_state['tipdata']['Extra Garden Tip'] = 0.0
+    extratip = st.text_input(
+        'Venmo/Cash',
+        value=st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
+        key='extragardentips',
+        on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
+        )
+    try:
+        extratip = float(extratip)
+    except Exception:
+        extratip = 0.0
+        st.session_state['tipdata']['Extra Garden Tip'] = extratip
+    serviceadjustment = st.text_input(
+        'Adjustment (+/-)',
+        value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
+        key='serviceadjustment',
+        on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
+        )
+    try:
+        serviceadjustment = float(serviceadjustment)
+    except Exception:
+        serviceadjustment = 0.0
+        st.session_state['tipdata']['Service Charge Adjustment'] = serviceadjustment
+    # if extratip != st.session_state['tipdata']['Extra Garden Tip']:
+    #     warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
+    #     st.session_state['tipdata']['Extra Garden Tip'] = extratip
+    totaltip = round(tip + extratip, 2)
+    # st.write(st.session_state['tipdata']['GardenDates'])
+    if not dfDates.equals(st.session_state['tipdata']['GardenDates']):
+        st.session_state['tipdata']['Base Garden Tip'] = tip
+    # if 'Event Tip' not in st.session_state['tipdata']:
+    # baseGardenTip = st.session_state['tipdata'].get('Base Garden Tip', 0.00)
+    # extraGardenTip = st.session_state['tipdata'].get('Extra Garden Tip', 0.00)
+    eventTip = tip + extratip
+    st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
+    # if 'Regular Pool' not in st.session_state['tipdata']:
+    dfSales = st.session_state['tipdata']['df_sales']
+    rawTip = round(dfSales['Tip'].sum(), 2)
+    st.session_state['tipdata']['Raw Pool'] = rawTip
+    totalTip = round(rawTip + serviceadjustment, 2)
+    st.session_state['tipdata']['Total Pool'] = totalTip
+    # totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
+    baseRegularTip = totalTip - tip
+    st.session_state['tipdata']['Regular Pool'] = round(baseRegularTip, 2)
+
+
+def HouseTip():
+    # st.caption('House Tip')
+    if 'housetipsforemployees' not in st.session_state['tipdata']:
+        df = pd.DataFrame({'Employee Name': st.session_state['tipdata']['Employees Worked']})
+        df['House Tip'] = 0.0
+        st.session_state['tipdata']['housetipsforemployees'] = df.copy()
+    df = st.session_state['tipdata']['housetipsforemployees'].copy()
+    # current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
+    current_list_of_employees = st.session_state['tipdata']['ORIGINAL_WorkedHoursDataUsedForTipping']['Employee Name'].unique()
+    
+    Height = int(35.2 * (len(current_list_of_employees) + 1))
+    edited_data = st.data_editor(
+        st.session_state['tipdata']['housetipsforemployees'][st.session_state['tipdata']['housetipsforemployees']['Employee Name'].isin(current_list_of_employees)],
+        hide_index=True, num_rows='fixed', height=Height,
+        column_config={
+            'Employee Name': st.column_config.TextColumn(disabled=True),
+            'House Tip': st.column_config.NumberColumn(format='$%.2f')
+        }
+        )
+    df.update(edited_data)
+    syncDataEditor(df, 'housetipsforemployees')
+
+
 def run():
     # with st.container(height=650):
     if 'tipdata' not in st.session_state:
@@ -216,28 +324,45 @@ def run():
     #         st.session_state['updatetipdata'] = True
     with col2:
         st.caption('')
+        if 'loadedarchive' in st.session_state:
+            st.caption(f'Loaded from Archive: {st.session_state["loadedarchive"]}')
         publishbutton = st.empty()
     if 'df_work_hours' in st.session_state['tipdata']:
         st.markdown('---')
         st.markdown('### Exclude Employees')
         tipIneligible()
-        with st.container(border=True):
-            col1, col2 = st.columns([1,1])
-            with col1:
-                st.markdown(f"#### Total Event\'s Tip Pool = ${st.session_state['tipdata']['Event Tip']}")
-                # st.text_input('#### Event\'s Pool ($)',
-                #              value=st.session_state['tipdata']['Event Tip'], disabled=True,
-                #              key='EventTip0')
-            with col2:
-                st.markdown(f"#### Total Regular Tip Pool = ${st.session_state['tipdata']['Regular Pool']}")
-                # st.text_input('#### Regular Pool ($)',
-                #             value=st.session_state['tipdata']['Regular Pool'], disabled=True,
-                #             key='RegularTip0')
+        st.markdown('---')
+        col1, cola, col2 = st.columns([2,0.1,1])
+        with col1:
+            st.markdown('### Garden Breakout')
+            st.write(f"Total Tipping Pool from Import Data= ${format(st.session_state['tipdata']['Raw Pool'], ',')}")
+            extratips = st.empty()
+            adjustments = st.empty()
+            gardenDatesPicker()
+            if st.session_state['tipdata'].get('Extra Garden Tip', 0.00) != 0.00:
+                total = st.session_state['tipdata']['Raw Pool'] + st.session_state['tipdata']['Extra Garden Tip']
+                total += st.session_state['tipdata'].get('Service Charge Adjustment', 0.00)
+                extratips.write(f"New Tipping Pool = ${format(round(total, 2), ',')}")
+            with st.container(border=True):
+                col11, col12 = st.columns([1,1])
+                with col11:
+                    st.markdown(f"#### Total Event\'s Tip Pool = ${st.session_state['tipdata']['Event Tip']}")
+                    # st.text_input('#### Event\'s Pool ($)',
+                    #              value=st.session_state['tipdata']['Event Tip'], disabled=True,
+                    #              key='EventTip0')
+                with col12:
+                    st.markdown(f"#### Total Regular Tip Pool = ${st.session_state['tipdata']['Regular Pool']}")
+                    # st.text_input('#### Regular Pool ($)',
+                    #             value=st.session_state['tipdata']['Regular Pool'], disabled=True,
+                    #             key='RegularTip0')
+        with col2:
+            st.markdown('### House Tip Entry')
+            HouseTip()
         # st.markdown('---')
-        st.markdown('### Helper Pool')
+        st.markdown('### Specialty Pools')
         helperPool()
         # st.markdown('---')
-        st.markdown('### Chef Pool')
+        st.markdown('#### Chef Pool')
         chefsPool()
         # st.markdown('---')
         with st.container(border=True):
@@ -254,7 +379,7 @@ def run():
                 st.markdown(f"#### Event Days = ${st.session_state['tipdata']['Avail Event Tip']}")
                 if 'GardenDates' in st.session_state['tipdata']:
                     if len(st.session_state['tipdata']['GardenDates']['Dates']) > 0:
-                        _str = 'Held on | '
+                        _str = 'Dates | '
                         for days in st.session_state['tipdata']['GardenDates']['Dates']:
                             _str += "{:%m/%d/%Y}".format(days) + ' | '
                         st.write(_str)

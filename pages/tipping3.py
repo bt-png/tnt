@@ -40,7 +40,7 @@ def TipChangeSummary():
     # df.loc['totals', 'Total Tips'] = df.loc[df.index[-2], 'Total Tips'] + df.loc[df.index[-3], 'Total Tips']
     # df.loc[df.index[-1], 'Employee Name'] = 'Total'
     # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
-    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'CALC Rate/hr', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
+    order = ['Employee Name', 'Regular', 'Total Tips', 'Total Tips %', 'House Tip', 'House Tip %', 'CALC Rate/hr', '% Change']  # df.columns.tolist()
     if df['House Tip'].sum() == 0:
         order.remove('House Tip')
         order.remove('House Tip %')
@@ -179,7 +179,9 @@ def run():
         st.session_state['tipdata'] = servertipdata()
     col1, col2 = st.columns([8,2])
     col1.header(st.session_state['company'])
-    col2.text('')
+    col2.caption('')
+    if 'loadedarchive' in st.session_state:
+        col2.caption(f'Loaded from Archive: {st.session_state["loadedarchive"]}')
     download = col2.empty()
     
     if 'df_work_hours' in st.session_state['tipdata']:

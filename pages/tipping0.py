@@ -8,6 +8,9 @@ from menu import menu_with_redirect
 from style import apply_css
 from sync import syncInput
 from sync import syncDataEditor
+from square import Square
+from square.environment import SquareEnvironment
+from square.core.api_error import ApiError
 
 
 dfs = ['df_sales', 'df_schedule', 'df_work_hours']
@@ -24,6 +27,55 @@ dfs = ['df_sales', 'df_schedule', 'df_work_hours']
 #     except Exception:
 #         st.warning('Something went wrong')
 #     st.session_state['tipdata'] = {}
+
+
+def squaredata():
+    st.markdown('---')
+    st.markdown('### Square API Data')
+    client = Square(
+        version='2025-05-21',
+        environment=SquareEnvironment.PRODUCTION,
+        token=st.secrets['Square_TOKEN']
+    )
+    # try:
+    #     response = client.locations.list()
+    #     for location in response.locations:
+    #         st.write(f"{location.id}: ")
+    #         st.write(f"{location.name}, ")
+    #         st.write(f"{location.address}, ")
+
+    # except ApiError as e:
+    #     for error in e.errors:
+    #         st.write(error.category)
+    #         st.write(error.code)
+    #         st.write(error.detail)
+    
+    # Fetch payments
+    try:
+        # response = client.payments.list()
+        # st.dataframe(response.items[4])
+        response = client.locations.list()
+        locID = response.locations[0].id
+        st.write(locID)
+        response = client.invoices.list(location_id=locID)
+        st.dataframe(response.items[4])
+        # response = client.payments.list()
+        # df_payment = pd.read_json(response.items)
+        # st.dataframe(response.items[1])
+        # for item in response:
+        #     # yield item
+        #     st.write(item)
+        # for page in response.iter_pages():
+        #     st.write(page)
+        # st.write(response.has_next)
+        # st.write(response.items)
+        # # for payment in response.body['payments']:
+        # st.write(response)
+    except ApiError as e:
+        for error in e.errors:
+            st.write(error.category)
+            st.write(error.code)
+            st.write(error.detail)
 
 
 def loadTotalWorkedHours():
@@ -299,6 +351,7 @@ def run():
     if st.session_state['tipdata'] != {}:
         # with st.container(height=650):
         showdata()
+        squaredata()
         # Publish needs to be at the end to allow for updates read in-line. st.empty container saves the space
         if st.session_state['updatedsomething']:
             if publishbutton.button('Publish Data', key='fromtipping0'):

@@ -237,7 +237,7 @@ def updateOverridePositions(client):
 
 
 def updateChefEmployees(client):
-    st.write('List of Chef\'s')
+    st.write('Core Staff - Chef\'s')
     st.caption('Default list for chef pool. User may add more.')
     clients = readClients()
     chefs = []
@@ -254,6 +254,27 @@ def updateChefEmployees(client):
     if chefs != update:
         if st.button('Update List of Chef\'s'):
             firestore.clientUpdateDict(client, 'chefs', update)
+            refresh()
+
+
+def updateCommissionStaff(client):
+    st.write('Core Staff - Commissioned')
+    st.caption('Default list for commissioned tips. User may add more.')
+    clients = readClients()
+    commission = []
+    if 'commission' in clients[client]:
+        commission = clients[client]['commission']
+    update = st.data_editor(
+        pd.DataFrame({'Employee Name': commission}, dtype=str),
+        num_rows='dynamic',
+        column_config={'Employee Name': st.column_config.TextColumn(width='large')},
+        hide_index=True,
+        key='commission'
+        ).dropna()
+    update = update['Employee Name'].to_list()
+    if commission != update:
+        if st.button('Update List of Commissioned Staff'):
+            firestore.clientUpdateDict(client, 'commission', update)
             refresh()
 
 

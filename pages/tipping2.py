@@ -489,7 +489,7 @@ def TipsSum():
     df.reset_index(inplace=True)
     dfhouse = st.session_state['tipdata']['housetipsforemployees']
     df = pd.merge(left=df, left_on='Employee Name', right=dfhouse, right_on=['Employee Name'], how='inner')
-    dfhelper = st.session_state['tipdata']['Helper Pool Employees']
+    dfhelper = st.session_state['tipdata']['Helper Pool Employees'].copy()
     elligible = st.session_state['tipdata']['Tip Eligible Employees']
     for idx, row in dfhelper.iterrows():
         if row['Employee Name'] not in elligible:
@@ -501,11 +501,14 @@ def TipsSum():
     if not dfhelper.empty:
         # df['Directed Tips'] = [dfhelper if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
         df['Directed Tips'] = df['Employee Name'].map(dfhelper.set_index('Employee Name')['Directed'])
+        df['Directed Tips'].replace(np.nan, 0, inplace=True)
     else:
         df['Directed Tips'] = 0
         order.remove('Directed Tips')
     df['Total Tips'] = [G + R + H for G, R, H in zip(df['Garden Tips'], df['Regular Tips'], df['Directed Tips'])]
     df.replace(0, np.nan, inplace=True)
+    if df['Directed Tips'].min() == 0 and df['Directed Tips'].max() == 0:
+        order.remove('Directed Tips')
     if df['Garden Tips'].sum() == 0:
         order.remove('Garden Tips')
     if df['Regular Tips'].sum() == 0:
@@ -580,7 +583,7 @@ def TipChangeSummary():
     df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
     df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
     df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
-    dfprepaid = st.session_state['tipdata']['Prepaid Pool Employees']
+    dfprepaid = st.session_state['tipdata']['Prepaid Pool Employees'].copy()
     elligible = st.session_state['tipdata']['Tip Eligible Employees']
     for idx, row in dfprepaid.iterrows():
         if row['Employee Name'] not in elligible:

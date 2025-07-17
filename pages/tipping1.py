@@ -58,6 +58,7 @@ def tipIneligible():
 def chefsPool():
     col1, col2 = st.columns([1,1])
     with col1:
+        st.markdown('#### Chef Pool')
         if 'chefEmployeePool' not in st.session_state['tipdata']:
         #     data = st.session_state['tipdata']['chefEmployeePool']
         # else:
@@ -92,8 +93,6 @@ def chefsPool():
             st.session_state['tipdata']['updated_work_shifts'].update(edited_data.set_index('Employee Name'))
         # if not st.session_state['tipdata']['chefEmployeePool'].equals(st.session_state['tipdata']['updated_chefEmployeePool']):
         #     st.warning('Before navigating to another page, be sure to \'Publish Data\'.')
-        
-
     with col2:
         chefPercent = int(
             st.number_input('#### Chef Percentage (%) of Total Pool',
@@ -127,55 +126,102 @@ def chefsPool():
             st.session_state['tipdata']['Chef Draw Regular'] = 0
 
 
+def prepaidPool():
+    # st.markdown('#### Prepaid Employees')
+    if 'Prepaid Pool' not in st.session_state['tipdata']:
+        st.session_state['tipdata']['Prepaid Pool'] = 0.00
+    if 'prepaidEmployeeNamepool' not in st.session_state['tipdata']:
+        st.session_state['tipdata']['prepaidEmployeeNamepool'] = []
+    col1, col2 = st.columns([1,1])
+    with col1:
+        prepaidpool = st.multiselect(
+                        "#### Prepaid Employees",
+                        st.session_state['tipdata']['Tip Eligible Employees'],
+                        default=st.session_state['tipdata']['prepaidEmployeeNamepool'], placeholder='Select Employees who have been prepaid tips',
+                        key='prepaidpoolemployees', on_change=syncInput, args=('prepaidpoolemployees', 'prepaidEmployeeNamepool')
+                    )
+        if 'Prepaid Pool Employees' in st.session_state['tipdata']:
+            df = st.session_state['tipdata']['Prepaid Pool Employees']
+            for idx, row in df.iterrows():
+                if row['Employee Name'] not in prepaidpool:
+                    df.drop(idx, inplace=True)
+            for name in prepaidpool:
+                if name not in df['Employee Name'].to_list():
+                    df.loc[len(df.index)] = [name, 0.0]
+        else:
+            df = pd.DataFrame({
+                'Employee Name': prepaidpool,
+                'Prepaid': [0.00 for x in prepaidpool]
+                })
+        st.session_state['tipdata']['Prepaid Pool Employees'] = df.copy()
+        if len(st.session_state['tipdata']['Prepaid Pool Employees']) > 0:
+            st.write('')
+            edited_data = st.data_editor(st.session_state['tipdata']['Prepaid Pool Employees'], hide_index=True, num_rows='fixed', column_config={
+                    'Employee Name': st.column_config.TextColumn(width='medium',disabled=True),
+                    'Prepaid': st.column_config.NumberColumn(format='$%.2f')
+                    }
+                )
+            syncDataEditor(edited_data, 'Prepaid Pool Employees')
+
 
 def helperPool():
     if 'Helper Pool' not in st.session_state['tipdata']:
         st.session_state['tipdata']['Helper Pool'] = 0.00
     col1, col2 = st.columns([1,1])
     with col1:
-        # st.markdown('#### Helper Pool Employees')
+        commissioned = clientGetValue(st.session_state['company'], 'commission')
+        elligible = st.session_state['tipdata']['Tip Eligible Employees']
+        elligible = list(set(list(elligible) + commissioned))
         if 'helperEmployeeNamepool' not in st.session_state['tipdata']:
-            st.session_state['tipdata']['helperEmployeeNamepool'] = []
-        pool = st.multiselect(
-                        "#### Helper Pool Employees",
-                        st.session_state['tipdata']['Tip Eligible Employees'],
+            st.session_state['tipdata']['helperEmployeeNamepool'] = commissioned
+        # st.write(st.session_state['tipdata']['helperEmployeeNamepool'])
+        helppool = st.multiselect(
+                        "#### Directed Tips",
+                        elligible,
                         default=st.session_state['tipdata']['helperEmployeeNamepool'], placeholder='Select Employees to add to the Helper Pool',
                         key='helperpoolemployees', on_change=syncInput, args=('helperpoolemployees', 'helperEmployeeNamepool')
                     )
         if 'Helper Pool Employees' in st.session_state['tipdata']:
             df = st.session_state['tipdata']['Helper Pool Employees']
             for idx, row in df.iterrows():
-                if row['Employee Name'] not in pool:
+                if row['Employee Name'] not in helppool:
                     df.drop(idx, inplace=True)
-            for name in pool:
+            for name in helppool:
                 if name not in df['Employee Name'].to_list():
-                    df.loc[len(df.index)] = [name, True]
+                    df.loc[len(df.index)] = [name, True, 0.00]
         else:
             df = pd.DataFrame({
-                'Employee Name': pool,
-                'Remain in Tip Pool': [True for x in pool]
+                'Employee Name': helppool,
+                'Remain in Tip Pool': [True for x in helppool],
+                'Directed': [0.0 for x in helppool]
                 })
         st.session_state['tipdata']['Helper Pool Employees'] = df.copy()
         if len(st.session_state['tipdata']['Helper Pool Employees']) > 0:
             st.write('')
             edited_data = st.data_editor(st.session_state['tipdata']['Helper Pool Employees'], hide_index=True, num_rows='fixed', column_config={
-                    'Employee Name': st.column_config.TextColumn(disabled=True),
-                    'Remain in Tip Pool': st.column_config.CheckboxColumn()
-                    }
+                    'Employee Name': st.column_config.TextColumn(width='medium',disabled=True),
+                    'Remain in Tip Pool': st.column_config.CheckboxColumn(),
+                    'Directed': st.column_config.NumberColumn(format='$%.2f')
+                }
                 )
             syncDataEditor(edited_data, 'Helper Pool Employees')
+        else:
+            edited_data = pd.DataFrame()
     with col2:
-        if len(st.session_state['tipdata']['Helper Pool Employees']) > 0:
+        if not edited_data.empty:
+        # if len(st.session_state['tipdata']['Helper Pool Employees']) > 0:
             # st.markdown('#### Distribute')
-            pool = st.text_input('#### Helper Pool ($)',
-                            value=st.session_state['tipdata'].get('Helper Pool', 0.00),
-                            key='HelperPool0', on_change=syncInput, args=('HelperPool0', 'Helper Pool'))
+            pool = edited_data['Directed'].sum()
+            st.markdown(f"#### Total Directed= ${'{0:.2f}'.format(pool)}")
+            # pool = st.text_input('#### Total Directed ($)',
+            #                 value=st.session_state['tipdata'].get('Helper Pool', 0.00),
+            #                 key='HelperPool0', on_change=syncInput, args=('HelperPool0', 'Helper Pool'))
             try:
                 pool = float(pool)
             except Exception:
                 pool = 0.0
-                st.session_state['tipdata']['Helper Pool'] = pool
-            if pool > 0:
+            st.session_state['tipdata']['Helper Pool'] = pool
+            if pool != 0:
                 col10, col20 = st.columns([1,1])
                 sliderenabled = False
                 if st.session_state['tipdata']['Event Tip'] == 0:
@@ -185,15 +231,15 @@ def helperPool():
                     st.session_state['tipdata']['Helper Slider'] = 100
                     sliderenabled = True
                 slider = col10.slider('#### Percentage from Garden Pool', max_value=100, min_value=0, disabled=sliderenabled,
-                                    value=int(st.session_state['tipdata'].get('Helper Slider', 75)), step=5, 
+                                    value=int(st.session_state['tipdata'].get('Helper Slider', 75)), step=2, 
                                     key='Helper Slider', on_change=syncInput, args=('Helper Slider', 'Helper Slider'))  # , label_visibility='collapsed')
                 with col20.container(border=True):
                     helperDrawGarden = pool * slider/100
                     st.session_state['tipdata']['Helper Draw Garden'] = round(helperDrawGarden, 2)
                     helperDrawRegular = pool - st.session_state['tipdata']['Helper Draw Garden']
-                    st.session_state['tipdata']['Helper Draw Regular'] = helperDrawRegular
-                    st.markdown(f" From Garden Tip Pool = ${st.session_state['tipdata']['Helper Draw Garden']}")
-                    st.markdown(f" From Regular Tip Pool = ${st.session_state['tipdata']['Helper Draw Regular']}")
+                    st.session_state['tipdata']['Helper Draw Regular'] = round(helperDrawRegular, 2)
+                    st.markdown(f" From Garden Tip Pool = ${'{0:.2f}'.format(st.session_state['tipdata']['Helper Draw Garden'])}")
+                    st.markdown(f" From Regular Tip Pool = ${'{0:.2f}'.format(st.session_state['tipdata']['Helper Draw Regular'])}")
                     # st.markdown('<div style="float:left; text-align:left">Garden Pool</div><div style="float:right; text-align:right">Regular Pool</div>', unsafe_allow_html=True)
             else:
                 st.session_state['tipdata']['Helper Draw Garden'] = 0
@@ -205,7 +251,7 @@ def helperPool():
 
 def gardenDatesPicker():
     st.markdown('---')
-    st.write('Tips related to Garden Events')
+    st.write('Tips related to Large Events')
     if 'GardenDates' not in st.session_state['tipdata']:
     #     data = st.session_state['tipdata']['GardenDates']
     # else:
@@ -213,7 +259,7 @@ def gardenDatesPicker():
         data['Dates'] = data['Dates'].astype('datetime64[as]')
         st.session_state['tipdata']['GardenDates'] = data
     dfDates = st.data_editor(st.session_state['tipdata']['GardenDates'], num_rows='dynamic', key='GardenDates', column_config={
-        'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
+        'Dates': st.column_config.DateColumn('Large Event Days', format='MM/DD/YYYY')
         }).dropna()
     dfDates.reset_index(drop=True, inplace=True)
     syncDataEditor(dfDates.copy(), 'GardenDates')
@@ -238,28 +284,32 @@ def gardenDatesPicker():
     st.write(f"Tips generated from selected dates = ${format(tip,',')}")
     # if 'Extra Garden Tip' not in st.session_state['tipdata']:
     #     st.session_state['tipdata']['Extra Garden Tip'] = 0.0
-    extratip = st.text_input(
-        'Venmo/Cash',
-        value=st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
-        key='extragardentips',
-        on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
-        )
-    try:
-        extratip = float(extratip)
-    except Exception:
-        extratip = 0.0
-        st.session_state['tipdata']['Extra Garden Tip'] = extratip
-    serviceadjustment = st.text_input(
-        'Adjustment (+/-)',
-        value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
-        key='serviceadjustment',
-        on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
-        )
-    try:
-        serviceadjustment = float(serviceadjustment)
-    except Exception:
-        serviceadjustment = 0.0
-        st.session_state['tipdata']['Service Charge Adjustment'] = serviceadjustment
+    st.markdown('##### Tip Adjustments (+/-)')
+    col1, col2 = st.columns([1,1])
+    with col1:
+        extratip = st.text_input(
+            'Large Events',
+            value=st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
+            key='extragardentips',
+            on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
+            )
+        try:
+            extratip = float(extratip)
+        except Exception:
+            extratip = 0.0
+            st.session_state['tipdata']['Extra Garden Tip'] = extratip
+    with col2:
+        serviceadjustment = st.text_input(
+            'Regular Days',
+            value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
+            key='serviceadjustment',
+            on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
+            )
+        try:
+            serviceadjustment = float(serviceadjustment)
+        except Exception:
+            serviceadjustment = 0.0
+            st.session_state['tipdata']['Service Charge Adjustment'] = serviceadjustment
     # if extratip != st.session_state['tipdata']['Extra Garden Tip']:
     #     warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
     #     st.session_state['tipdata']['Extra Garden Tip'] = extratip
@@ -334,7 +384,7 @@ def run():
         st.markdown('---')
         col1, cola, col2 = st.columns([2,0.1,1])
         with col1:
-            st.markdown('### Garden Breakout')
+            st.markdown('### Large Events Breakout')
             st.write(f"Total Tipping Pool from Import Data= ${format(st.session_state['tipdata']['Raw Pool'], ',')}")
             extratips = st.empty()
             adjustments = st.empty()
@@ -361,8 +411,8 @@ def run():
         # st.markdown('---')
         st.markdown('### Specialty Pools')
         helperPool()
+        prepaidPool()
         # st.markdown('---')
-        st.markdown('#### Chef Pool')
         chefsPool()
         # st.markdown('---')
         with st.container(border=True):

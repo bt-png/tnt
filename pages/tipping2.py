@@ -489,14 +489,30 @@ def TipsSum():
     df.reset_index(inplace=True)
     dfhouse = st.session_state['tipdata']['housetipsforemployees']
     df = pd.merge(left=df, left_on='Employee Name', right=dfhouse, right_on=['Employee Name'], how='inner')
-    dfhelper = st.session_state['tipdata']['Helper Pool Employees']
-    HelperPool = st.session_state['tipdata'].get('Helper Pool', 0.0)
-    if len(dfhelper) > 0 and HelperPool > 0:
-        df['Helper Tips'] = [HelperPool/len(dfhelper) if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
+    dfhelper = st.session_state['tipdata']['Helper Pool Employees'].copy()
+    elligible = st.session_state['tipdata']['Tip Eligible Employees']
+    for idx, row in dfhelper.iterrows():
+        if row['Employee Name'] not in elligible:
+            dfhelper.drop(idx, inplace=True)
+    # HelperPool = st.session_state['tipdata'].get('Helper Pool', 0.0)
+    # if len(dfhelper) > 0 and HelperPool > 0:
+    #     df['Directed Tips'] = [HelperPool/len(dfhelper) if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
+    order = ['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips', 'Directed Tips']  # df.columns.tolist()
+    if not dfhelper.empty:
+        # df['Directed Tips'] = [dfhelper if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
+        df['Directed Tips'] = df['Employee Name'].map(dfhelper.set_index('Employee Name')['Directed'])
+        df['Directed Tips'].replace(np.nan, 0, inplace=True)
     else:
-        df['Helper Tips'] = 0
-    df['Total Tips'] = [G + R + H for G, R, H in zip(df['Garden Tips'], df['Regular Tips'], df['Helper Tips'])]
+        df['Directed Tips'] = 0
+        order.remove('Directed Tips')
+    df['Total Tips'] = [G + R + H for G, R, H in zip(df['Garden Tips'], df['Regular Tips'], df['Directed Tips'])]
     df.replace(0, np.nan, inplace=True)
+    if df['Directed Tips'].min() == 0 and df['Directed Tips'].max() == 0:
+        order.remove('Directed Tips')
+    if df['Garden Tips'].sum() == 0:
+        order.remove('Garden Tips')
+    if df['Regular Tips'].sum() == 0:
+        order.remove('Regular Tips')
     if removeNA:
         df.dropna(subset=['Total Tips'], inplace=True)
     config = {
@@ -505,20 +521,20 @@ def TipsSum():
         'Garden Tips': st.column_config.NumberColumn(format='$%.2f'),
         'Regular Tips': st.column_config.NumberColumn(format='$%.2f'),
         'House Tip': st.column_config.NumberColumn(format='$%.2f'),
-        'Helper Tips': st.column_config.NumberColumn(format='$%.2f'),
+        'Directed Tips': st.column_config.NumberColumn(format='$%.2f'),
         }
     st.session_state['tipdata']['df_tipssum'] = df.copy()
-    # df.loc['total'] = df[['Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips']].sum()
+    # df.loc['total'] = df[['Regular', 'Garden Tips', 'Regular Tips', 'Directed Tips']].sum()
     # df.loc[df.index[-1], 'Employee Name'] = 'Total'
     df.set_index(['Employee Name'], drop=True, inplace=True)
     # df = df.style.apply(rower, axis=None)
-    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips'])
+    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Directed Tips'])
     df = df.format('{:.2f}', subset=['Regular'])
     # df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
     current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
     Height = int(35.2 * (len(current_list_of_employees) + 1))
     st.dataframe(df, hide_index=True, height=Height,
-                 column_order=['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips'],
+                 column_order=order,
                  column_config=config)
     if removeNA:
         st.caption('Positions where the \'Tip Pool\' is \'Position Not Eligible\' have been removed from this summary.')
@@ -555,8 +571,9 @@ def ByPosition():
 
 def TipChangeSummary():
     # st.caption('Percent Change from House Tip')
+    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change', 'Prepaid Tips']  # df.columns.tolist()
     df = st.session_state['tipdata']['df_tipssum'].copy()
-    df.loc['total'] = df[['Regular', 'Garden Tips', 'Regular Tips', 'Helper Tips']].sum()
+    df.loc['total'] = df[['Regular', 'Garden Tips', 'Regular Tips', 'Directed Tips']].sum()
     df.loc[df.index[-1], 'Employee Name'] = 'Total'
     HouseTipSum = df['House Tip'].sum()
     df.loc[df.index[-1], 'House Tip'] = HouseTipSum
@@ -566,8 +583,16 @@ def TipChangeSummary():
     df['Total Tips %'] = [100 * (tip / CalcTipSum) for tip in df['Total Tips']]
     df['% Change'] = round(100*((df['Total Tips %'])-df['House Tip %'])/df['House Tip %'], 2)
     df.loc[df.index[-1], '% Change'] = round(100*((CalcTipSum)-HouseTipSum)/HouseTipSum, 2)
-    # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
-    order = ['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']  # df.columns.tolist()
+    dfprepaid = st.session_state['tipdata']['Prepaid Pool Employees'].copy()
+    elligible = st.session_state['tipdata']['Tip Eligible Employees']
+    for idx, row in dfprepaid.iterrows():
+        if row['Employee Name'] not in elligible:
+            dfprepaid.drop(idx, inplace=True)
+    if not dfprepaid.empty:
+        df['Prepaid Tips'] = df['Employee Name'].map(dfprepaid.set_index('Employee Name')['Prepaid'])
+    else:
+        df['Prepaid Tips'] = 0
+        order.remove('Prepaid Tips')
     if df['House Tip'].sum() == 0:
         order.remove('House Tip')
         order.remove('House Tip %')
@@ -577,7 +602,7 @@ def TipChangeSummary():
     Height = int(35.2 * (len(df) + 1))
     df.set_index('Employee Name', inplace=True, drop=False)
     df.index.name = None
-    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tips'])
+    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Directed Tips', 'House Tip', 'Total Tips', 'Prepaid Tips'])
     df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
     df = df.format('{:.2f}', subset=['Regular'])
     df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
@@ -588,6 +613,7 @@ def TipChangeSummary():
         'Total Tips': st.column_config.NumberColumn('CALC Tips', format='$%.2f'),
         # 'House Tip %': st.column_config.NumberColumn(format='%.2f'),
         'Total Tips %': st.column_config.NumberColumn('CALC Tips %', format='%.2f'),
+        'Prepaid Tips': st.column_config.NumberColumn('Prepaid Tips', format='$%.2f'),
         }
     # df_tips_agg_p = df_tips_agg_p.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tip'])
     # df_tips_agg_p = df_tips_agg_p.format('{:.0f}%', subset=['Assigned Tip %', 'House Tip %', '% Change'])

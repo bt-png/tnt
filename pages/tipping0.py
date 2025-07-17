@@ -54,6 +54,14 @@ def loadShiftsWorked():
     dataframe.sort_values(by=['Employee Name'], inplace=True)
     st.session_state['tipdata']['work_shifts'] = dataframe.copy()  # to_dict()
 
+def updateChefShiftsWorked():
+    if 'work_shifts' not in st.session_state:
+        loadShiftsWorked()
+    df = st.session_state['tipdata']['work_shifts'].copy()
+    dataframe = st.session_state['tipdata']['df_schedule'].copy()
+    st.write(dataframe)
+
+
 
 # def save_csv():
 #     df = st.session_state['tipdata']['df_work_hours']
@@ -109,6 +117,7 @@ def loadFilestoSessionState(files):
                 st.session_state['updatedsomething'] = True
                 st.session_state['tipdata']['df_schedule'] = dataframe.copy()
                 loadShiftsWorked()
+                # updateChefShiftsWorked()
             st.dataframe(dataframe)
         elif 'First Name' == dataframe.columns[0]:
             # st.session_state['val'] = file

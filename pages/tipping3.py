@@ -11,6 +11,55 @@ from sync import syncInput
 # from pages.tipping2 import TipChangeSummary
 
 
+def chefPooldf():
+    chefpool = st.session_state['tipdata']['Chef Pool']
+    dfchefpool = st.session_state['tipdata']['chefEmployeePool'].copy()
+    dfchefpool['Chef Tips'] = [chefpool * (sh / dfchefpool['Shifts Worked'].sum()) for sh in dfchefpool['Shifts Worked']]
+    dfchefpool['Shifts Worked'] = dfchefpool['Shifts Worked'].fillna(0).astype(int)
+    dfchefpool['Total Tips'] = [A + B for A, B in zip(dfchefpool['Chef Tips'], dfchefpool['Directed'])]
+    return dfchefpool
+
+
+def PayrollSummary():
+    df = st.session_state['tipdata']['df_tipssum'].copy()
+    # df = df.loc[:, ['Employee Name', 'Total Tips']]
+    # df.set_index('Employee Name', inplace=True, drop=True)
+    dfchefpool = chefPooldf()
+    dfchefpool = dfchefpool.loc[:, ['Employee Name', 'Total Tips']]
+    # dfchefpool.set_index('Employee Name', inplace=True, drop=True)
+    dfhelper = st.session_state['tipdata']['Helper Pool Employees'].copy()
+    elligible = st.session_state['tipdata']['Tip Eligible Employees']
+    for idx, row in dfhelper.iterrows():
+        if row['Employee Name'] in elligible:
+            dfhelper.drop(idx, inplace=True)
+    dfhelper['Total Tips'] = dfhelper['Directed']
+    dfhelper = dfhelper.loc[:, ['Employee Name', 'Total Tips']]
+    # dfhelper.set_index('Employee Name', inplace=True, drop=True)
+    dftips = pd.concat([df, dfchefpool, dfhelper])
+    dfprepaid = st.session_state['tipdata']['Prepaid Pool Employees']
+    if not dfprepaid.empty:
+        dftips['Prepaid Tips'] = dftips['Employee Name'].map(dfprepaid.set_index('Employee Name')['Prepaid'])
+        dftips.replace(np.nan, 0, inplace=True)
+        dftips['Total Tips'] = [A - B for A, B in zip(dftips['Total Tips'], dftips['Prepaid Tips'])]
+        dftips = dftips.loc[:, ['Employee Name', 'Total Tips']]
+    dftips.replace(0, np.nan, inplace=True)
+    dftips.dropna(axis=0, inplace=True)
+    dftips.set_index('Employee Name', inplace=True, drop=False)
+    altrows = dftips['Employee Name'].iloc[1::2]
+    dftips.loc['Payroll Tip Total'] = dftips['Total Tips'].sum()
+    dftips.loc[dftips.index[-1], 'Employee Name'] = 'Payroll Tip Total'
+    Height = int(35.2 * (len(dftips) + 1))
+    dftips.index.name = None
+    dftips = dftips.style.format('${:.2f}', subset=['Total Tips'])
+    dftips = dftips.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
+    dftips = dftips.set_properties(subset = pd.IndexSlice[['Payroll Tip Total'], :], **{'background-color' : 'lightsteelblue'})
+    config = {
+        'Employee Name': st.column_config.TextColumn(width='medium'),
+        'Total Tips': st.column_config.NumberColumn('Total Tip', format='$%.2f'),
+        }
+    st.dataframe(dftips, hide_index=True, column_config=config, height=Height)
+
+
 def TipChangeSummary():
     # st.caption('Percent Change from House Tip')
     df = st.session_state['tipdata']['df_tipssum'].copy()
@@ -40,7 +89,19 @@ def TipChangeSummary():
     # df.loc['totals', 'Total Tips'] = df.loc[df.index[-2], 'Total Tips'] + df.loc[df.index[-3], 'Total Tips']
     # df.loc[df.index[-1], 'Employee Name'] = 'Total'
     # column_order=['Employee Name', 'Regular', 'House Tip', 'House Tip %', 'Total Tips', 'Total Tips %', '% Change']
-    order = ['Employee Name', 'Regular', 'Total Tips', 'Total Tips %', 'House Tip', 'House Tip %', 'CALC Rate/hr', '% Change']  # df.columns.tolist()
+    order = ['Employee Name', 'Regular', 'Total Tips', 'Total Tips %', 'House Tip', 'House Tip %', 'CALC Rate/hr', '% Change', 'Prepaid Tips']  # df.columns.tolist()
+    dfprepaid = st.session_state['tipdata']['Prepaid Pool Employees'].copy()
+    elligible = st.session_state['tipdata']['Tip Eligible Employees']
+    for idx, row in dfprepaid.iterrows():
+        if row['Employee Name'] not in elligible:
+            dfprepaid.drop(idx, inplace=True)
+    if not dfprepaid.empty:
+        df['Prepaid Tips'] = df['Employee Name'].map(dfprepaid.set_index('Employee Name')['Prepaid'])
+    else:
+        df['Prepaid Tips'] = 0
+        order.remove('Prepaid Tips')
+    PrepaidTipSum = df['Prepaid Tips'].sum()
+    df.loc[df.index[-1], 'Prepaid Tips'] = PrepaidTipSum
     if df['House Tip'].sum() == 0:
         order.remove('House Tip')
         order.remove('House Tip %')
@@ -51,7 +112,7 @@ def TipChangeSummary():
     Height = int(35.2 * (len(df) + 1))
     df.set_index('Employee Name', inplace=True, drop=False)
     df.index.name = None
-    df = df.style.format('${:.2f}', subset=['House Tip', 'CALC Rate/hr', 'Total Tips'])
+    df = df.style.format('${:.2f}', subset=['House Tip', 'CALC Rate/hr', 'Total Tips', 'Prepaid Tips'])
     df = df.format('{:.0f}%', subset=['Total Tips %', 'House Tip %', '% Change'])
     df = df.format('{:.2f}', subset=['Regular'])
     df = df.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
@@ -63,6 +124,7 @@ def TipChangeSummary():
         'Total Tips': st.column_config.NumberColumn('CALC Tips', format='$%.2f'),
         # 'House Tip %': st.column_config.NumberColumn(format='%.2f'),
         'Total Tips %': st.column_config.NumberColumn('CALC Tips %', format='%.2f'),
+        'Prepaid Tips': st.column_config.NumberColumn('Prepaid Tips', format='$%.2f'),
         }
     # df_tips_agg_p = df_tips_agg_p.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Helper Tips', 'House Tip', 'Total Tip'])
     # df_tips_agg_p = df_tips_agg_p.format('{:.0f}%', subset=['Assigned Tip %', 'House Tip %', '% Change'])
@@ -137,11 +199,27 @@ def TipsSum():
     # df.reset_index(inplace=True)
     # dfhouse = st.session_state['tipdata']['housetipsforemployees']
     # df = pd.merge(left=df, left_on='Employee Name', right=dfhouse, right_on=['Employee Name'], how='inner')
-    dfhelper = st.session_state['tipdata']['Helper Pool Employees']
-    HelperPool = st.session_state['tipdata'].get('Helper Pool', 0.0)
-    if len(dfhelper) > 0 and HelperPool > 0:
-        df['Helper Tips'] = [HelperPool/len(dfhelper) if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
-        # order = ['Employee Name', 'Regular Hours', 'Regular Tips', 'Regular Tips', 'Helper Tips']
+    dfhelper = st.session_state['tipdata']['Helper Pool Employees'].copy()
+    elligible = st.session_state['tipdata']['Tip Eligible Employees']
+    for idx, row in dfhelper.iterrows():
+        if row['Employee Name'] not in elligible:
+            dfhelper.drop(idx, inplace=True)
+    # HelperPool = st.session_state['tipdata'].get('Helper Pool', 0.0)
+    # if len(dfhelper) > 0 and HelperPool > 0:
+    #     df['Directed Tips'] = [HelperPool/len(dfhelper) if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
+    # order = ['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips', 'Directed Tips']  # df.columns.tolist()
+    if not dfhelper.empty:
+        # df['Directed Tips'] = [dfhelper if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
+        df['Directed Tips'] = df['Employee Name'].map(dfhelper.set_index('Employee Name')['Directed'])
+        df['Directed Tips'].replace(np.nan, 0, inplace=True)
+    else:
+        df['Directed Tips'] = 0
+        # order.remove('Directed Tips')
+    # dfhelper = st.session_state['tipdata']['Helper Pool Employees']
+    # HelperPool = st.session_state['tipdata'].get('Helper Pool', 0.0)
+    # if len(dfhelper) > 0 and HelperPool > 0:
+    #     df['Directed Tips'] = [HelperPool/len(dfhelper) if name in dfhelper['Employee Name'].to_list() else 0 for name in df['Employee Name']]
+        # order = ['Employee Name', 'Regular Hours', 'Regular Tips', 'Regular Tips', 'Directed Tips']
     # else:
         # df['Helper Tips'] = 0
         # order = ['Employee Name', 'Regular', 'Garden Tips', 'Regular Tips']
@@ -161,7 +239,7 @@ def TipsSum():
     # df.set_index(['Employee Name'], drop=True, inplace=True)
     rows = len(df)
     Height = int(35.2 * (rows + 1))
-    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Regular Tip Rate', 'Garden Tip Rate'])
+    df = df.style.format('${:.2f}', subset=['Garden Tips', 'Regular Tips', 'Regular Tip Rate', 'Garden Tip Rate', 'Directed Tips'])
     df = df.format('{:.2f}', subset=['Regular Hours', 'Garden Hours'])
     # df = df.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightgrey'})
     current_list_of_employees = st.session_state['tipdata']['WorkedHoursDataUsedForTipping']['Employee Name'].unique()
@@ -190,6 +268,8 @@ def run():
         else:
             st.markdown('---')
             st.markdown('### Owner Summary')
+            st.markdown('#### Payroll Summary')
+            PayrollSummary()
             col1, col2 = st.columns([5.25, 6])
             with col1:
                 st.markdown('#### Staff Summary')
@@ -197,34 +277,41 @@ def run():
             with col2:
                 col3, col4 = st.columns([4, 3])
                 with col3:
-                    st.markdown(f"#### Chef Pool - {int(st.session_state['tipdata'].get('Chef Percent', 18))}%")
-                    chefpool = st.session_state['tipdata']['Chef Pool']
-                    dfchefpool = st.session_state['tipdata']['chefEmployeePool'].copy()
-                    dfchefpool['Chef Tips'] = [chefpool * (sh / dfchefpool['Shifts Worked'].sum()) for sh in dfchefpool['Shifts Worked']]
-                    dfchefpool['Shifts Worked'] = dfchefpool['Shifts Worked'].fillna(0).astype(int)
-                    if dfchefpool['Directed'].sum() > 0:
-                        order = ['Employee Name', 'Chef Tips', 'Directed', 'Shifts Worked']
-                    else:
-                        order = ['Employee Name', 'Chef Tips', 'Shifts Worked']
+                    # st.markdown(f"#### Chef Pool - {int(st.session_state['tipdata'].get('Chef Percent', 18))}%")
+                    st.markdown('#### Core Staff')
+                    dfchefpool = chefPooldf()
+                    commissioned = clientGetValue(st.session_state['company'], 'commission')
+                    dfhelper = st.session_state['tipdata']['Helper Pool Employees'].copy()
+                    for idx, row in dfhelper.iterrows():
+                        if row['Employee Name'] not in commissioned:
+                            dfhelper.drop(idx, inplace=True)
+                    dfhelper = dfhelper.rename(columns={'Directed': 'Total Tips'})
+                    dfhelper = dfhelper.loc[:, ['Employee Name', 'Total Tips']]
+                    dfchefpool = dfchefpool.loc[:, ['Employee Name', 'Total Tips']]
+                    dfchefpool = pd.concat([dfchefpool, dfhelper])
+                    # if dfchefpool['Directed'].min() != 0 or dfchefpool['Directed'].max() != 0:
+                    #     order = ['Employee Name', 'Chef Tips', 'Directed', 'Shifts Worked']
+                    # else:
+                    #     order = ['Employee Name', 'Chef Tips', 'Shifts Worked']
                     altrows = dfchefpool['Employee Name'].iloc[1::2]
-                    dfchefpool.reset_index(inplace=True)
+                    # dfchefpool.reset_index(inplace=True)
                     dfchefpool.set_index('Employee Name', inplace=True, drop=False)
-                    dfchefpool.loc['Total'] = dfchefpool[['Chef Tips', 'Directed', 'Shifts Worked']].sum()
-                    dfchefpool.loc[dfchefpool.index[-1], 'Employee Name'] = 'Chef SubTotal'
-                    dfchefpool = dfchefpool.style.format('${:.2f}', subset=['Chef Tips', 'Directed'])
-                    dfchefpool = dfchefpool.format('{:0.0f}', subset=['Shifts Worked'])
+                    dfchefpool.loc['Total'] = dfchefpool[['Total Tips']].sum()
+                    dfchefpool.loc[dfchefpool.index[-1], 'Employee Name'] = 'Core Staff SubTotal'
+                    dfchefpool = dfchefpool.style.format('${:.2f}', subset=['Total Tips'])
+                    # dfchefpool = dfchefpool.format('{:0.0f}', subset=['Shifts Worked'])
                     dfchefpool = dfchefpool.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     dfchefpool = dfchefpool.set_properties(subset=pd.IndexSlice[['Total'], :], **{'background-color' : 'lightsteelblue'})
-                    st.dataframe(dfchefpool, hide_index=True, column_order=order)
+                    st.dataframe(dfchefpool, hide_index=True)
                 with col4:
                     st.markdown('#### Tip Sources')
                     src = pd.DataFrame({
-                        'Name': ['Square Reg', 'Square Garden', 'Venmo/Cash', 'Adjustment (+/-)'],
+                        'Name': ['Square Regular Events', 'Regular Days (+/-)', 'Square Large Events', 'Large Events (+/-)'],
                         'Total': [
                             st.session_state['tipdata'].get('Raw Pool', 0.0) - st.session_state['tipdata'].get('Base Garden Tip', 0.0),
+                            st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
                             st.session_state['tipdata'].get('Base Garden Tip', 0.0),
                             st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
-                            st.session_state['tipdata'].get('Service Charge Adjustment', 0.0)
                             ]
                             })
                     src.loc['total'] = src[['Total']].sum()

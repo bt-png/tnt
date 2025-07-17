@@ -21,6 +21,7 @@ def run():
                 cp.updateTipExemptEmployees(client)
             with col2:
                 cp.updateChefEmployees(client)
+                cp.updateCommissionStaff(client)
             col1, col2 = st.columns([1, 1])
             with col1:
                 cp.updateTipPoolNames(client)

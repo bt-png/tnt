@@ -84,15 +84,25 @@ def loadFilestoSessionState(files):
             dataframe = pd.read_csv(file)
         except Exception:
             dataframe = pd.read_excel(file)
-        if 'Sales' == dataframe.columns[0]:
-            dataframe = dataframe.set_index('Sales').transpose()
+        if dataframe.columns[0].startswith('Sales '):
+            firstcolumn=dataframe.columns[0]
+            # dataframe = dataframe.transpose()
+            # st.dataframe(dataframe)
+            dataframe = dataframe.set_index(firstcolumn).transpose()
+            st.dataframe(dataframe)
             for col in dataframe.columns:
-                dataframe[col] = dataframe[col].str.replace('$', '', regex=False)
-                dataframe[col] = dataframe[col].str.replace(',', '', regex=False)
-                dataframe[col] = dataframe[col].astype(float)
-                dataframe[col] = dataframe[col].replace(np.nan, 0)
+                try:
+                    dataframe[col] = dataframe[col].str.replace('$', '', regex=False)
+                    dataframe[col] = dataframe[col].str.replace(',', '', regex=False)
+                    dataframe[col] = dataframe[col].astype(float)
+                    dataframe[col] = dataframe[col].replace(np.nan, 0)
+                except Exception:
+                    pass
+            try:
+                tmpcol = dataframe.pop('Tips')
+            except Exception:
                 tmpcol = dataframe.pop('Tip')
-                dataframe.insert(0, 'Tip', tmpcol)
+            dataframe.insert(0, 'Tip', tmpcol)
             if not dataframe.equals(st.session_state['tipdata']['df_sales']):
                 st.session_state['updatedsomething'] = True
                 st.session_state['tipdata']['df_sales'] = dataframe.copy()

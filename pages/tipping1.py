@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from menu import menu_with_redirect
 from company import publish
 from company import servertipdata
@@ -279,6 +280,9 @@ def gardenDatesPicker():
     dfDates['str'] = dfDates['str'].astype(str)
     df = st.session_state['tipdata']['df_sales'].copy()
     df = df.reset_index()
+    ## Format DateTime String
+    df['index'] = [datetime.strptime(date_string, '%m/%d/%y') for date_string in df['index']]
+    df['index'] = [datetime.strftime(dateobject, '%m/%d/%Y') for dateobject in df['index']]
     df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
     tip = round(df['Tip'].sum(), 2)
     st.write(f"Tips generated from selected dates = ${format(tip,',')}")

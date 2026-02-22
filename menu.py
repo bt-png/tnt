@@ -15,26 +15,32 @@ def authenticated_menu():
         st.sidebar.page_link("pages/admin.py", label="Administration")
     st.sidebar.markdown('---')
     if len(st.session_state['company']) > 0:
-        st.sidebar.header(st.session_state['company'])
-        if st.session_state['username'] in st.secrets['admin_user']:
-            st.sidebar.page_link('pages/tipping0.py', label='Import Data')  #, icon='💣')
-        st.sidebar.page_link("pages/tipping1.py", label="a. Distribution")
-        st.sidebar.page_link("pages/tipping2.py", label="b. Eligibility")
-        st.sidebar.page_link("pages/tipping3.py", label="c. Summary")
-        
-        if st.session_state['updatedsomething']:
-            st.sidebar.warning('Changes to data made on this page may not be available \
-                               to reference if you navigate to other pages!')
-            col1, col2 = st.sidebar.columns([1, 9])
-            if col2.button('Publish Data'):
-                publish()
-            st.sidebar.caption('Please \'Publish Data\' to make sure it is not lost. \
-                               If your browser refreshes, the data will be lost.')
+        if st.session_state['company'] == 'Other Test Company':
+            st.sidebar.header(st.session_state['company'])
+            if st.session_state['username'] in st.secrets['admin_user']:
+                # st.sidebar.page_link('pages/audit0.py', label='Audit Data')
+                st.sidebar.page_link('pages/audit1.py', label='Perform Sales Audit') 
         else:
-            col1, col2 = st.sidebar.columns([1, 9])
-            if col2.button('Refresh Server Data'):
-                st.session_state['tipdata'] = servertipdata()
-                st.rerun()
+            st.sidebar.header(st.session_state['company'])
+            if st.session_state['username'] in st.secrets['admin_user']:
+                st.sidebar.page_link('pages/tipping0.py', label='Import Data')  #, icon='💣')
+            st.sidebar.page_link("pages/tipping1.py", label="a. Distribution")
+            st.sidebar.page_link("pages/tipping2.py", label="b. Eligibility")
+            st.sidebar.page_link("pages/tipping3.py", label="c. Summary")
+            
+            if st.session_state['updatedsomething']:
+                st.sidebar.warning('Changes to data made on this page may not be available \
+                                to reference if you navigate to other pages!')
+                col1, col2 = st.sidebar.columns([1, 9])
+                if col2.button('Publish Data'):
+                    publish()
+                st.sidebar.caption('Please \'Publish Data\' to make sure it is not lost. \
+                                If your browser refreshes, the data will be lost.')
+            else:
+                col1, col2 = st.sidebar.columns([1, 9])
+                if col2.button('Refresh Server Data'):
+                    st.session_state['tipdata'] = servertipdata()
+                    st.rerun()
 
     # if st.session_state.role in ["admin", "super-admin"]:
     #     st.sidebar.page_link("ti/admin.py", label="Manage users")

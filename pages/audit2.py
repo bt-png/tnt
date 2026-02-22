@@ -99,7 +99,15 @@ def show_groupNetJE(df_):
 def show_singleJE(df_):
     JESingle = df_.copy()
     JESingle['Inv_Count'] = JESingle.groupby('Extr Num')['Extr Num'].transform('count')
-    st.dataframe(JESingle[JESingle['Inv_Count'] == 1], column_order=FullColumns())
+    
+    st.dataframe(JESingle[(JESingle['Inv_Count'] == 1) & ((JESingle['Amount'].abs() == 500) | (JESingle['Amount'].abs() == 1000))], column_order=FullColumns())
+
+
+def show_singleJE_other(df_):
+    JESingle = df_.copy()
+    JESingle['Inv_Count'] = JESingle.groupby('Extr Num')['Extr Num'].transform('count')
+    
+    st.dataframe(JESingle[(JESingle['Inv_Count'] == 1) & ((JESingle['Amount'].abs() != 500) & (JESingle['Amount'].abs() != 1000))], column_order=FullColumns())
 
 
 def show_firstJE(df_):
@@ -147,9 +155,13 @@ def run():
         st.markdown('### Net non Zero')
         show_groupNetJE(df)
 
-        st.markdown('### Single Transaction')
-        show_singleJE(df)
-
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            st.markdown('### Single Deposits (\$500/\$1,000)')
+            show_singleJE(df)
+        with col2:
+            st.markdown('### Single Deposits (other amount)')
+            show_singleJE_other(df)
         st.markdown('### First Entry (Negative)')
         show_firstJE(df)
         

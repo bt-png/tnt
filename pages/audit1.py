@@ -12,6 +12,27 @@ from sync import syncInput
 from sync import syncDataEditor
 
 
+def FullColumns():
+    return ['Transaction date', 'Memo/Description', 'Amount']
+
+
+def dataframe_with_selections(df):
+    df_with_selections = df.copy()
+    df_with_selections.insert(0, "Select", False)
+
+    # Get dataframe row-selections from user with st.data_editor
+    edited_df = st.data_editor(
+        df_with_selections,
+        hide_index=True,
+        column_config={"Select": st.column_config.CheckboxColumn(required=True)},
+        disabled=df.columns,
+    )
+
+    # Filter the dataframe using the temporary column, then drop the column
+    selected_rows = edited_df[edited_df.Select]
+    return selected_rows.drop('Select', axis=1)
+
+
 def loadfile(files):
     try:
         dataframe = pd.read_csv(files)
@@ -71,8 +92,15 @@ def adjustMemo(df_):
 
 
 def show_groupNetJE(df_):
-    JENet = df_.groupby('Clean Memo')['Amount'].sum().reset_index(name='NetJETotal')
-    st.dataframe(JENet[JENet['NetJETotal'] != 0], hide_index=True)
+    col1, col2 = st.columns([2,6])
+    with col1:
+        JENet = df_.groupby('Clean Memo')['Amount'].sum().reset_index(name='NetJETotal')
+        JENet = JENet[JENet['NetJETotal'] != 0]
+        selection = dataframe_with_selections(JENet)
+    with col2:
+        st.write("Your selection:")
+        union_df = pd.merge(selection, df_, on='Clean Memo', how='inner')
+        st.dataframe(union_df, column_order=FullColumns())
 
 
 def show_firstJE(df_):
@@ -135,17 +163,18 @@ def run():
         df = addFromTo(df)
         # Modified
         st.dataframe(df)
-        col1, cola, col2 = st.columns([2,0.1,6])
-        with col1:
-            st.markdown('### Net non Zero')
-            show_groupNetJE(df)
-        with col2:
-            st.markdown('### JE Correct')
-            show_MonthMatchesAmount(df)
-        col1, cola, col2 = st.columns([6,0.1,2])
-        with col1:
-            st.markdown('### First JE')
-            show_firstJE(df)
+        st.markdown('### Net non Zero')
+        show_groupNetJE(df)
+        # col1, cola, col2 = st.columns([2,0.1,6])
+        # with col1:
+            
+        # with col2:
+        #     st.markdown('### JE Correct')
+        #     show_MonthMatchesAmount(df)
+        # col1, cola, col2 = st.columns([6,0.1,2])
+        # with col1:
+        #     st.markdown('### First JE')
+        #     show_firstJE(df)
         # Publish needs to be at the end to allow for updates read in-line. st.empty container saves the space
         # if st.session_state['updatedsomething']:
         #     if publishbutton.button('Publish Data', key='fromaudit1'):

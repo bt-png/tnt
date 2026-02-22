@@ -73,6 +73,8 @@ def addMonthName(df_):
 def addFromTo(df_):
     df_['FROM'] = \
         df_['Memo/Description'].astype(str).str.split('for', n=1, expand=True)[0].str.strip()
+    df_['FROM'] = \
+        df_['FROM'].astype(str).str.split(' ', n=1, expand=True)[0].str.strip()
     df_['TO'] = \
             df_['Memo/Description'].astype(str).str.split('for', n=1, expand=True)[1].str.strip()
     df_['TO'] = \
@@ -113,12 +115,14 @@ def show_firstJE(df_):
     st.dataframe(first_rows[first_rows['Amount'] < 0],
                  column_order=['Transaction date', 'Memo/Description', 'Amount'])
 
+
 def show_MonthMatchesAmount(df_):
     filtered_from = df_[df_['FROM'] == df_['Trans Month Name']]
     from_df_errors = filtered_from[filtered_from['Amount'] < 0]
     if from_df_errors.empty:
         st.write('No Errors in Active Month')
     else:
+        st.write('Active Month (Negative)')
         st.dataframe(from_df_errors,
                  column_order=['Transaction date', 'Memo/Description', 'Amount'])
     filtered_to = df_[df_['TO'] == df_['Trans Month Name']]
@@ -126,6 +130,7 @@ def show_MonthMatchesAmount(df_):
     if to_df_errors.empty:
         st.write('No Errors in Moving Month')
     else:
+        st.write('Moving Month (Positive)')
         st.dataframe(to_df_errors,
                  column_order=['Transaction date', 'Memo/Description', 'Amount'])
 
@@ -168,16 +173,13 @@ def run():
         st.dataframe(df)
         st.markdown('### Net non Zero')
         show_groupNetJE(df)
-        # col1, cola, col2 = st.columns([2,0.1,6])
-        # with col1:
-            
-        # with col2:
-        #     st.markdown('### JE Correct')
-        #     show_MonthMatchesAmount(df)
-        # col1, cola, col2 = st.columns([6,0.1,2])
-        # with col1:
-        #     st.markdown('### First JE')
-        #     show_firstJE(df)
+        col1, cola, col2 = st.columns([6,0.1,6])
+        with col1:
+            st.markdown('### JE Correct')
+            show_MonthMatchesAmount(df)
+        with col2:
+            st.markdown('### First JE')
+            show_firstJE(df)
         # Publish needs to be at the end to allow for updates read in-line. st.empty container saves the space
         # if st.session_state['updatedsomething']:
         #     if publishbutton.button('Publish Data', key='fromaudit1'):

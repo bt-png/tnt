@@ -142,14 +142,14 @@ def run():
         with col2:
             st.markdown('### JE Correct')
             show_MonthMatchesAmount(df)
-        col1, cola, col2 = st.columns([2,0.1,6])
+        col1, cola, col2 = st.columns([6,0.1,2])
         with col1:
             st.markdown('### First JE')
             show_firstJE(df)
         # Publish needs to be at the end to allow for updates read in-line. st.empty container saves the space
-        if st.session_state['updatedsomething']:
-            if publishbutton.button('Publish Data', key='fromaudit1'):
-                publish()
+        # if st.session_state['updatedsomething']:
+        #     if publishbutton.button('Publish Data', key='fromaudit1'):
+        #         publish()
     else:
         st.write('You must first upload and publish Sales Audit data')
 

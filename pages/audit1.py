@@ -105,7 +105,7 @@ def show_groupNetJE(df_):
     with col2:
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Clean Memo', how='inner')
-        st.dataframe(union_df, column_order=FullColumns())
+        st.dataframe(union_df, column_order=FullColumns(), width=1200)
 
 
 def show_firstJE(df_):

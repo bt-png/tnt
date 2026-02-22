@@ -15,7 +15,7 @@ def authenticated_menu():
         st.sidebar.page_link("pages/admin.py", label="Administration")
     st.sidebar.markdown('---')
     if len(st.session_state['company']) > 0:
-        if st.session_state['company'] == 'Other Test Company':
+        if st.session_state['company'] == 'TNT Consulting Audit':
             st.sidebar.header(st.session_state['company'])
             if st.session_state['username'] in st.secrets['admin_user']:
                 # st.sidebar.page_link('pages/audit0.py', label='Audit Data')

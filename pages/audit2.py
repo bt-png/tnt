@@ -115,7 +115,7 @@ def show_firstJE(df_):
     first_rows = filtered_df.drop_duplicates(subset='Clean Memo', keep='first')
     
     st.dataframe(first_rows[first_rows['Amount'] < 0],
-                 column_order=['Transaction date', 'Memo/Description', 'Amount'], width=1200)
+                 column_order=['Transaction date', 'Memo/Description', 'Amount'], width=800)
 
 
 # Invoice numbers can be string of 4 consecutive numbers (1806 or #001806 both should resolve to 1806)

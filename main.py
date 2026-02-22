@@ -102,7 +102,7 @@ def archive():
 
 def home():
     # Launch Page - Not Logged in
-    st.header('Payroll Tipping Portal')
+    st.header('Automations Portal')
     st.write('provided by, TNT Consulting.')
     if 'user_info' not in st.session_state:
         loginstatus()

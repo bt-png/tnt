@@ -20,6 +20,7 @@ def authenticated_menu():
             if st.session_state['username'] in st.secrets['admin_user']:
                 # st.sidebar.page_link('pages/audit0.py', label='Audit Data')
                 st.sidebar.page_link('pages/audit1.py', label='Perform Sales Audit') 
+                st.sidebar.page_link('pages/audit2.py', label='Perform Deposits Audit') 
         else:
             st.sidebar.header(st.session_state['company'])
             if st.session_state['username'] in st.secrets['admin_user']:

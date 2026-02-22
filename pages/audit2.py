@@ -38,7 +38,7 @@ def loadfile(files):
         dataframe = pd.read_csv(files)
     except Exception:
         dataframe = pd.read_excel(files)
-    if 'Sales' in dataframe[dataframe.columns[0]][4]:
+    if 'Deposits' in dataframe[dataframe.columns[0]][4]:
         dataframe.drop(labels=[0, 1, 2], axis=0, inplace=True)
         dataframe.drop(labels=dataframe.columns[0], axis=1, inplace=True)
         dataframe.columns = dataframe.iloc[0]
@@ -70,18 +70,6 @@ def addMonthName(df_):
     return df_
 
 
-def addFromTo(df_):
-    df_['FROM'] = \
-        df_['Memo/Description'].astype(str).str.split('for', n=1, expand=True)[0].str.strip()
-    df_['FROM'] = \
-        df_['FROM'].astype(str).str.split(' ', n=1, expand=True)[0].str.strip()
-    df_['TO'] = \
-            df_['Memo/Description'].astype(str).str.split('for', n=1, expand=True)[1].str.strip()
-    df_['TO'] = \
-        df_['TO'].astype(str).str.split(' ', n=1, expand=True)[0].str.strip()
-    return df_
-
-
 def adjustMemo(df_):
     df_['Clean Memo'] = df_['Memo/Description'].astype(str).str.strip()
     pattern = r'(\d+)'
@@ -100,12 +88,18 @@ def show_groupNetJE(df_):
             NetJETotal=('Amount', 'sum'),
             NetJECount=('Amount', 'count')
             ).reset_index()
-        JENet = JENet[JENet['NetJETotal'] != 0]
+        JENet = JENet[(JENet['NetJETotal'] != 0) & (JENet['NetJECount'] != 1)]
         selection = dataframe_with_selections(JENet)
     with col2:
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Clean Memo', how='inner')
         st.dataframe(union_df, column_order=FullColumns(), width=1200)
+
+
+def show_singleJE(df_):
+    JESingle = df_.copy()
+    JESingle['Inv_Count'] = JESingle.groupby('Extr Num')['Extr Num'].transform('count')
+    st.dataframe(JESingle[JESingle['Inv_Count'] == 1], column_order=FullColumns())
 
 
 def show_firstJE(df_):
@@ -116,33 +110,13 @@ def show_firstJE(df_):
                  column_order=['Transaction date', 'Memo/Description', 'Amount'])
 
 
-def show_MonthMatchesAmount(df_):
-    filtered_from = df_[df_['FROM'] == df_['Trans Month Name']]
-    from_df_errors = filtered_from[filtered_from['Amount'] < 0]
-    if from_df_errors.empty:
-        st.write('No Errors in Active Month')
-    else:
-        st.write('Active Month (Negative)')
-        st.dataframe(from_df_errors,
-                 column_order=['Transaction date', 'Memo/Description', 'Amount'])
-    filtered_to = df_[df_['TO'] == df_['Trans Month Name']]
-    to_df_errors = filtered_to[filtered_to['Amount'] > 0]
-    if to_df_errors.empty:
-        st.write('No Errors in Moving Month')
-    else:
-        st.write('Moving Month (Positive)')
-        st.dataframe(to_df_errors,
-                 column_order=['Transaction date', 'Memo/Description', 'Amount'])
+# Invoice numbers can be string of 4 consecutive numbers (1806 or #001806 both should resolve to 1806)
 
-
-# Extract FROM and TO month from description.
-
-# Process Month to Month Batches
-# FROM Amount is + and matches transaction 
-# TO Amount is - and matches transaction
-
-# Process full file
-# Matching descirption amounts net zero  
+# Errors if:
+# Invoice # can't be extracted
+# Sum of Amount's from Invoice Numbers does not net zero
+# Initial transaction date is -$
+# Count of invoice #s != 2
 
 
 # Errors if:   
@@ -157,35 +131,34 @@ def run():
     with col2:
         st.caption('')
     loadedfile = None
-    files = st.file_uploader('Upload Sales Audit File', type=['csv', 'xlsx'], accept_multiple_files=False, key='fileuploader')
+    files = st.file_uploader('Upload Deposit Audit File', type=['csv', 'xlsx'], accept_multiple_files=False, key='fileuploader')
     if files is not None:
         loadedfile = loadfile(files)
     if loadedfile is not None:
         st.markdown('---')
-        st.markdown('### Sales Data Audit')
-        #df = st.session_state['tipdata']['df_audit_sales'].copy()
+        st.markdown('### Deposit Data Audit')
+        #df = st.session_state['tipdata']['df_audit_deposit'].copy()
         # Original
         # st.dataframe(df)
         df = addMonthName(loadedfile)
         df = adjustMemo(df)
-        df = addFromTo(df)
         # Modified
         st.dataframe(df)
         st.markdown('### Net non Zero')
         show_groupNetJE(df)
-        col1, cola, col2 = st.columns([6,0.1,6])
-        with col1:
-            st.markdown('### JE Correct')
-            show_MonthMatchesAmount(df)
-        with col2:
-            st.markdown('### First Deposits (Negative)')
-            show_firstJE(df)
+
+        st.markdown('### Single Transaction')
+        show_singleJE(df)
+
+        st.markdown('### First Entry (Negative)')
+        show_firstJE(df)
+        
         # Publish needs to be at the end to allow for updates read in-line. st.empty container saves the space
         # if st.session_state['updatedsomething']:
         #     if publishbutton.button('Publish Data', key='fromaudit1'):
         #         publish()
     else:
-        st.write('You must first upload Sales Audit data')
+        st.write('You must first upload Deposit Audit data')
 
 
 if __name__ == '__main__':

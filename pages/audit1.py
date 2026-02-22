@@ -94,7 +94,7 @@ def adjustMemo(df_):
 
 
 def show_groupNetJE(df_):
-    col1, col2 = st.columns([4,6])
+    col1, col2 = st.columns([5,6])
     with col1:
         JENet = df_.groupby('Clean Memo').agg(
             NetJETotal=('Amount', 'sum'),

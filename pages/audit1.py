@@ -178,7 +178,7 @@ def run():
             st.markdown('### JE Correct')
             show_MonthMatchesAmount(df)
         with col2:
-            st.markdown('### First JE')
+            st.markdown('### First Deposits (Negative)')
             show_firstJE(df)
         # Publish needs to be at the end to allow for updates read in-line. st.empty container saves the space
         # if st.session_state['updatedsomething']:

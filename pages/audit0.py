@@ -215,7 +215,7 @@ def show_FuturePE(df_, ardate, armonth):
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
-    st.write(union_df['AccrualTotal'].sum())
+    st.write(f" Total Future PE: ${format(df_Accrual['AccrualTotal'].sum(),',')}")
 
 
 def InvoiceAccruals(files):

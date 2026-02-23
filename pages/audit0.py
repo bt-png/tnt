@@ -189,6 +189,7 @@ def show_AR(df_, ardate, armonth, formdata):
         (df_['Payment Month'] != df_['Event Month'])
                      ]
     st.markdown('---')
+    st.write('Events this month')
     st.dataframe(df_Accrual, column_order=InvoiceColumns())
     st.markdown('---')
     st.stop()

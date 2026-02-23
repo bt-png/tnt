@@ -194,7 +194,7 @@ def show_AR(df_):
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     
     
-    col1, col2 = st.columns([5,6])
+    col1, col2 = st.columns([3,8])
     with col1:
         selection = dataframe_with_selections(df_Accrual)
     with col2:

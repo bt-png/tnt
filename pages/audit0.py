@@ -236,20 +236,20 @@ def run():
         st.markdown('---')
         st.markdown('''
                     ### Instructions: 
-                    #### Import 3 Files:  
-
-                    **from When I Work** 
-                    1. Timesheets for pay period (staff hours)  
-                    2. Scheduler for pay period (chef shifts)   
-
-                    **from Square Reports**  
-                    3. Sales summary (broken daily) for time period  
-
-                    #### Reminders:
-                    - Once those are loaded - you can complete steps A-C using the 
-                    [SOP](https://docs.google.com/document/d/15JG3qYbkNIFvSfBfSI-DMCrhkaO6uVV92cw2xg55URo/edit?usp=sharing).  
-                    - You can publish your work to update tables, please do so before moving to new step.
+                    #### Import Files:  
                     ''')
+                    # **from When I Work** 
+                    # 1. Timesheets for pay period (staff hours)  
+                    # 2. Scheduler for pay period (chef shifts)   
+
+                    # **from Square Reports**  
+                    # 3. Sales summary (broken daily) for time period  
+
+                    # #### Reminders:
+                    # - Once those are loaded - you can complete steps A-C using the 
+                    # [SOP](https://docs.google.com/document/d/15JG3qYbkNIFvSfBfSI-DMCrhkaO6uVV92cw2xg55URo/edit?usp=sharing).  
+                    # - You can publish your work to update tables, please do so before moving to new step.
+                    # ''')
 
 
 if __name__ == '__main__':

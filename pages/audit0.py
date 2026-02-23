@@ -203,11 +203,10 @@ def show_AR(df_, ardate, armonth):
 
 def show_FuturePE(df_, ardate, armonth):
     st.write('Future PE Deposit')
-    # datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
-    # df_Accrual = df_[df_['Event Month'].dt.date < datefilter].groupby('grouping').agg(
-    #     AccrualTotal=('Amount Paid', 'sum')).reset_index()
-    df_Accrual = df_[df_['Payment Month'] == armonth].groupby('Last Payment for Event Date').agg(
+    datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
+    df_Accrual = df_[
+        (df_['Event date'].dt.date > datefilter) & (df_['Payment Month'] == armonth)
+                     ].groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:

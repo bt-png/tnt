@@ -54,7 +54,7 @@ def InvoiceColumns():
 
 
 def GiftColumns():
-    return ['EventOccuredOn', 'Event', 'Value', 'PurchaserName', 'Recipient Name', 'Transaction Month']
+    return ['EventOccuredOn', 'Event', 'Value', 'StaffName', 'PurchaserName', 'Recipient Name', 'Transaction Month']
 
 
 def string_list(data, before, after):
@@ -70,7 +70,7 @@ def filter_RawData_GiftCard(df, nam):
         _df = df.copy()
         col1, col2 = st.columns([8,2])
         col2.write('Apply filters')
-        to_filter_columns = ('Event Year', 'EventOccuredOn', 'Event', 'StaffName', 'PurchaserName', 'RecipientName') #st.multiselect("Filter dataframe on", df.columns)
+        to_filter_columns = ('Event Year', 'Transaction Month', 'Event', 'StaffName', 'PurchaserName', 'RecipientName') #st.multiselect("Filter dataframe on", df.columns)
         for column in to_filter_columns:
             user_cat_input = col2.multiselect(
                 f"Filter on {column}",

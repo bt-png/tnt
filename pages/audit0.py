@@ -184,13 +184,15 @@ def show_AR(df_):
     st.write('AR')
     col1, col2, col3 = st.columns([1,1,6])
     with col1:
-        ardate = st.date_input('Last Event Month', value=df_['Event date'].iloc[-1].date())
+        ardate = st.date_input('Event Month') #, value=df_['Event date'].iloc[-1].date())
     # with col2:
-    #     armonth = month_names[ardate.month]+'-'+str(ardate.year)
+    armonth = month_names[ardate.month]+'-'+str(ardate.year)
     #     st.write(armonth)
-    datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
+    # datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
     # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
-    df_Accrual = df_[df_['Event date'].dt.date < datefilter].groupby('grouping').agg(
+    # df_Accrual = df_[df_['Event Month'].dt.date < datefilter].groupby('grouping').agg(
+    #     AccrualTotal=('Amount Paid', 'sum')).reset_index()
+    df_Accrual = df_[df_['Event Month'] == armonth].groupby('grouping').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:

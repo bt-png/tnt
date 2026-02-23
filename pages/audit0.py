@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
+from datetime import timedelta
 from company import publish
 from company import servertipdata
 from company import clientGetValue
@@ -182,10 +183,8 @@ def InvoiceColumns():
 
 def show_AR(df_, ardate, armonth):
     st.write('AR')
-    
-    #     st.write(armonth)
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
+    datefilter = datefilter + timedelta(days=-2)
     df_Accrual = df_[
         (df_['Last Payment Date'].dt.date > datefilter) & (df_['Event Month'] == armonth)
                      ].groupby('Last Payment for Event Date').agg(
@@ -199,6 +198,7 @@ def show_AR(df_, ardate, armonth):
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
+    st.write(f" Total AR: ${format(df_Accrual['AccrualTotal'].sum(),',')}")
 
 
 def show_FuturePE(df_, ardate, armonth):

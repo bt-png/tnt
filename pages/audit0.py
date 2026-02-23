@@ -184,7 +184,7 @@ def InvoiceColumns():
 def show_AR(df_, ardate, armonth):
     st.write('AR')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    datefilter = datefilter + timedelta(days=-2)
+    datefilter = datefilter + timedelta(days=-3)
     df_Accrual = df_[
         (df_['Last Payment Date'].dt.date > datefilter) & (df_['Event Month'] == armonth)
                      ].groupby('Last Payment for Event Date').agg(

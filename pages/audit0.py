@@ -195,9 +195,10 @@ def InvoiceAccruals():
         df_inv_accr = df_invoice[df_invoice['Payment Month'] != df_invoice['Event Month']]
         df_inv_accr['grouping'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
         st.write('Accrual Items')
-        st.dataframe(df_inv_accr)
+        # st.dataframe(df_inv_accr)
         df_Accrual = df_inv_accr.groupby('grouping').agg(
             AccrualTotal=('Amount Paid', 'sum')).reset_index()
+        
         
         col1, col2 = st.columns([5,6])
         with col1:

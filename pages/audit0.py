@@ -207,7 +207,7 @@ def show_AR(df_, ardate, armonth, formdata):
     col1, col2 = st.columns([3,8])
     with col1:
         st.write('Payment On')
-        val_PaymentOn = df_Prior_sorted[df_Prior_sorted['Last Payment Date Processed'].dt.date < datefilter]['Requested Amount'].sum()
+        val_PaymentOn = df_Prior['Requested Amount'].sum()
         st.write(f" Total Current: ${format(val_PaymentOn,',')}")
     # with col2:
     #     st.write('Pending Payment')

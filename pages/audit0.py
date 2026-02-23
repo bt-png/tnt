@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import datetime
 from company import publish
 from company import servertipdata
 from company import clientGetValue
@@ -160,21 +161,46 @@ def dataframe_with_selections(df):
 #             return True
 #     return False
 
+month_names = {
+        1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+        7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'
+    }
+
 
 def addMonthName(df_, column_to_check, new_name):
     df_[column_to_check] = pd.to_datetime(df_[column_to_check], errors='coerce')
     df_ = df_.dropna(subset=[column_to_check]).copy()
     df_[new_name] = df_[column_to_check].dt.month
-    month_names = {
-        1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
-        7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'
-    }
+    
     df_[new_name] = df_[new_name].map(month_names) + '-' + df_[column_to_check].dt.year.astype(str)
     return df_
 
 
 def InvoiceColumns():
     return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Payment Month', 'Amount Paid', 'Event date', 'Event Month']
+
+
+def show_AR(df_):
+    st.write('AR')
+    col1, col2, col3 = st.columns([1,1,6])
+    with col1:
+        ardate = st.date_input('Last Event Month', value=df_['Event date'].iloc[-1].date())
+    # with col2:
+    #     armonth = month_names[ardate.month]+'-'+str(ardate.year)
+    #     st.write(armonth)
+    datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
+    # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
+    df_Accrual = df_[df_['Event date'].dt.date < datefilter].groupby('grouping').agg(
+        AccrualTotal=('Amount Paid', 'sum')).reset_index()
+    
+    
+    col1, col2 = st.columns([5,6])
+    with col1:
+        selection = dataframe_with_selections(df_Accrual)
+    with col2:
+        st.write("Your selection:")
+        union_df = pd.merge(selection, df_, on='grouping', how='inner')
+        st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
 
 
 def InvoiceAccruals(files):
@@ -200,23 +226,12 @@ def InvoiceAccruals(files):
                 df_invoice = addMonthName(df_invoice, 'Event date', 'Event Month')
                 eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
                 df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
+                df_invoice.reset_index(drop=True, inplace=True)
                 st.write('Raw Data')
                 st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
                 df_inv_accr = df_invoice[(df_invoice['Payment Month'] != df_invoice['Event Month']) & (df_invoice['Event date'].dt.year.astype(str) == str(eventyear))]
                 df_inv_accr['grouping'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
-                st.write('Accrual Items')
-                # st.dataframe(df_inv_accr)
-                df_Accrual = df_inv_accr.groupby('grouping').agg(
-                    AccrualTotal=('Amount Paid', 'sum')).reset_index()
-                
-                
-                col1, col2 = st.columns([5,6])
-                with col1:
-                    selection = dataframe_with_selections(df_Accrual)
-                with col2:
-                    st.write("Your selection:")
-                    union_df = pd.merge(selection, df_inv_accr, on='grouping', how='inner')
-                    st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
+                show_AR(df_inv_accr)
                 
                 # Sum Requested Payment Date for Event Date
     

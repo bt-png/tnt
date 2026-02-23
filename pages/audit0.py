@@ -10,7 +10,24 @@ from sync import syncInput
 from sync import syncDataEditor
 
 
-dfs = ['df_audit_sales', 'df_audit_deposits']
+dfs = ['df_accruals_invoices']
+
+
+def dataframe_with_selections(df):
+    df_with_selections = df.copy()
+    df_with_selections.insert(0, "Select", False)
+
+    # Get dataframe row-selections from user with st.data_editor
+    edited_df = st.data_editor(
+        df_with_selections,
+        hide_index=True,
+        column_config={"Select": st.column_config.CheckboxColumn(required=True)},
+        disabled=df.columns,
+    )
+
+    # Filter the dataframe using the temporary column, then drop the column
+    selected_rows = edited_df[edited_df.Select]
+    return selected_rows.drop('Select', axis=1)
 
 
 # def clear_save_data():
@@ -84,6 +101,11 @@ def loadFilestoSessionState(files):
             dataframe = pd.read_csv(file)
         except Exception:
             dataframe = pd.read_excel(file)
+        if 'Invoice Token' == dataframe.columns[0]:
+            if not dataframe.equals(st.session_state['tipdata']['df_accruals_invoices']):
+                    st.session_state['updatedsomething'] = True
+                    st.session_state['tipdata']['df_accruals_invoices'] = dataframe.copy()
+            st.dataframe(dataframe)
         if 'Transaction Report' == dataframe.columns[0]:
             dfname = ''
             if 'Prepaid' in dataframe[dataframe.columns[0]][4]:
@@ -112,88 +134,18 @@ def loadFilestoSessionState(files):
 
 def allDataFramesLoaded():
     checkSum = 0
-    if st.session_state['tipdata']['df_audit_sales'] is not None:
+    if st.session_state['tipdata']['df_accruals_invoices'] is not None:
         checkSum += 1
     else:
-        st.warning('Sales Audit Data has not been loaded.')
-    if st.session_state['tipdata']['df_audit_deposits'] is not None:
-        checkSum += 1
-    else:
-        st.warning('Deposits Audit Data has not been loaded.')
+        st.warning('Invoices Data has not been loaded.')
+    # if st.session_state['tipdata']['df_audit_deposits'] is not None:
+    #     checkSum += 1
+    # else:
+    #     st.warning('Deposits Audit Data has not been loaded.')
     if checkSum == len(dfs):
         st.success('All Data has been loaded!')
         return True
     return False
-
-
-# def gardenDatesPicker():
-#     st.markdown('---')
-#     st.write('Tips related to Garden Events')
-#     if 'GardenDates' not in st.session_state['tipdata']:
-#     #     data = st.session_state['tipdata']['GardenDates']
-#     # else:
-#         data = pd.DataFrame({'Dates': []})
-#         data['Dates'] = data['Dates'].astype('datetime64[as]')
-#         st.session_state['tipdata']['GardenDates'] = data
-#     dfDates = st.data_editor(st.session_state['tipdata']['GardenDates'], num_rows='dynamic', key='GardenDates', column_config={
-#         'Dates': st.column_config.DateColumn('Garden Event Days', format='MM/DD/YYYY')
-#         }).dropna()
-#     dfDates.reset_index(drop=True, inplace=True)
-#     syncDataEditor(dfDates.copy(), 'GardenDates')
-#     # if 'GardenDates' in st.session_state['tipdata']:
-#     #     if st.session_state['tipdata']['GardenDates']['Dates'].to_list() != dfDates['Dates'].to_list():
-#     #         st.session_state['updatedsomething'] = True
-#             # # warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
-#             # st.session_state['tipdata']['GardenDates'] = dfDates.copy()
-#     # elif not dfDates.empty:
-#     #    st.session_state['updatedsomething'] = True
-#     #    warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
-#     #    st.session_state['tipdata']['GardenDates'] = dfDates.copy()
-#     try:
-#         dfDates['str'] = ["{:%m/%d/%Y}".format(date) for date in dfDates['Dates']]
-#     except Exception:
-#         dfDates['str'] = None
-#     dfDates['str'] = dfDates['str'].astype(str)
-#     df = st.session_state['tipdata']['df_sales'].copy()
-#     df = df.reset_index()
-#     df = pd.merge(left=df, left_on='index', right=dfDates, right_on='str', how='inner')
-#     tip = round(df['Tip'].sum(), 2)
-#     st.write(f"Tips generated from selected dates = ${format(tip,',')}")
-#     # if 'Extra Garden Tip' not in st.session_state['tipdata']:
-#     #     st.session_state['tipdata']['Extra Garden Tip'] = 0.0
-#     extratip = float(st.text_input(
-#         'Venmo/Cash',
-#         value=st.session_state['tipdata'].get('Extra Garden Tip', 0.0),
-#         key='extragardentips',
-#         on_change=syncInput, args=('extragardentips', 'Extra Garden Tip')
-#         ))
-#     serviceadjustment = float(st.text_input(
-#         'Adjustment (+/-)',
-#         value=st.session_state['tipdata'].get('Service Charge Adjustment', 0.0),
-#         key='serviceadjustment',
-#         on_change=syncInput, args=('serviceadjustment', 'Service Charge Adjustment')
-#         ))
-#     # if extratip != st.session_state['tipdata']['Extra Garden Tip']:
-#     #     warning.warning('Before navigating to another page, be sure to \'Publish Data\'.')
-#     #     st.session_state['tipdata']['Extra Garden Tip'] = extratip
-#     totaltip = round(tip + extratip, 2)
-#     # st.write(st.session_state['tipdata']['GardenDates'])
-#     if not dfDates.equals(st.session_state['tipdata']['GardenDates']):
-#         st.session_state['tipdata']['Base Garden Tip'] = tip
-#     # if 'Event Tip' not in st.session_state['tipdata']:
-#     # baseGardenTip = st.session_state['tipdata'].get('Base Garden Tip', 0.00)
-#     # extraGardenTip = st.session_state['tipdata'].get('Extra Garden Tip', 0.00)
-#     eventTip = tip + extratip
-#     st.session_state['tipdata']['Event Tip'] = round(eventTip, 2)
-#     # if 'Regular Pool' not in st.session_state['tipdata']:
-#     dfSales = st.session_state['tipdata']['df_sales']
-#     rawTip = round(dfSales['Tip'].sum(), 2)
-#     st.session_state['tipdata']['Raw Pool'] = rawTip
-#     totalTip = round(rawTip + serviceadjustment, 2)
-#     st.session_state['tipdata']['Total Pool'] = totalTip
-#     # totalTip = st.session_state['tipdata'].get('Total Pool', 0.00)
-#     baseRegularTip = totalTip - tip
-#     st.session_state['tipdata']['Regular Pool'] = round(baseRegularTip, 2)
 
 
 def upload():
@@ -209,52 +161,58 @@ def upload():
     return False
 
 
+def addMonthName(df_, column_to_check, new_name):
+    df_[column_to_check] = pd.to_datetime(df_[column_to_check], errors='coerce')
+    df_ = df_.dropna(subset=[column_to_check]).copy()
+    df_[new_name] = df_[column_to_check].dt.month
+    month_names = {
+        1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+        7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'
+    }
+    df_[new_name] = df_[new_name].map(month_names) + '-' + df_[column_to_check].dt.year.astype(str)
+    return df_
+
+
+def InvoiceColumns():
+    return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Amount Paid', 'Event Date', 'Payment Month', 'Event Month']
+
+
+def InvoiceAccruals():
+    if st.session_state['tipdata']['df_accruals_invoices'] is not None:
+        st.markdown('---')
+        st.markdown('### Invoice Accruals')
+        st.write('Raw Data')
+        df_invoice = st.session_state['tipdata']['df_accruals_invoices']
+        df_invoice['Amount Paid'] = df_invoice['Amount Paid'].str.replace('$', '', regex=False)
+        df_invoice['Amount Paid'] = df_invoice['Amount Paid'].str.replace(',', '', regex=False)
+        df_invoice['Amount Paid'] = df_invoice['Amount Paid'].astype(float)
+        df_invoice['Amount Paid'] = df_invoice['Amount Paid'].replace(np.nan, 0)
+        # df_invoice['Amount Paid'] = df_invoice['Amount Paid'].apply(lambda x: f'${x:,.2f}')
+        st.dataframe(df_invoice)
+        df_invoice = addMonthName(df_invoice, 'Last Payment Date', 'Payment Month')
+        df_invoice = addMonthName(df_invoice, 'Event date', 'Event Month')
+        
+        df_inv_accr = df_invoice[df_invoice['Payment Month'] != df_invoice['Event Month']]
+        df_inv_accr['grouping'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
+        st.write('Accrual Items')
+        st.dataframe(df_inv_accr)
+        df_Accrual = df_inv_accr.groupby('grouping').agg(
+            AccrualTotal=('Amount Paid', 'sum')).reset_index()
+        
+        col1, col2 = st.columns([5,6])
+        with col1:
+            selection = dataframe_with_selections(df_Accrual)
+        with col2:
+            st.write("Your selection:")
+            union_df = pd.merge(selection, df_inv_accr, on='grouping', how='inner')
+            st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
+        
+        # Sum Requested Payment Date for Event Date
+
+
 def showdata():
-    # if st.session_state['auditdata']['df_schedule'] is not None:
-    #     st.markdown('---')
-    #     st.markdown('### Schedule Data')
-    #     col1, col2 = st.columns([4, 6])
-    #     col1.write('Update Shifts Worked')
-    #     # data = st.session_state['tipdata']['work_shifts'].copy()
-    #     edited_data = col1.data_editor(st.session_state['tipdata']['work_shifts'], num_rows='fixed', key='work_shifts', column_config={
-    #         'Employee Name': st.column_config.TextColumn(width='medium', disabled=True),
-    #         'Shifts Worked': st.column_config.NumberColumn()
-    #     })
-    #     syncDataEditor(edited_data, 'work_shifts')
-    #     col2.write('Raw Data')
-    #     # df_tmp_sch = st.session_state['tipdata']['df_schedule']
-    #     col2.dataframe(st.session_state['auditdata']['df_schedule'])
-    #     # dfdays = pd.DataFrame({})
-    #     # dfdays['Employee Name'] = df_tmp_sch['Employee Name'].unique()
-    #     # st.dataframe(dfdays)
-    if st.session_state['tipdata']['df_audit_sales'] is not None:
-        st.markdown('---')
-        st.markdown('### Sales Audit Data')
-        # col1, col2 = st.columns([4, 6])
-        # with col1:
-            # st.write(f"Total Tipping Pool from Raw Data= ${format(st.session_state['tipdata']['Raw Pool'], ',')}")
-            # extratips = st.empty()
-            # adjustments = st.empty()
-            # gardenDatesPicker()
-            # if st.session_state['tipdata'].get('Extra Garden Tip', 0.00) != 0.00:
-            #     total = st.session_state['tipdata']['Raw Pool'] + st.session_state['tipdata']['Extra Garden Tip']
-            #     total += st.session_state['tipdata'].get('Service Charge Adjustment', 0.00)
-            #     extratips.write(f"New Tipping Pool = ${format(round(total, 2), ',')}")
-
-        st.write('Raw Data')
-        st.dataframe(st.session_state['tipdata']['df_audit_sales'])
-    if st.session_state['tipdata']['df_audit_deposits'] is not None:
-        st.markdown('---')
-        st.markdown('### Deposits Audit Data')
-        # col1, col2 = st.columns([4, 6])
-        # with col1:
-        #     st.write(f"A total of {st.session_state['tipdata']['Total Hours Worked']} hrs were reported \
-        #             by {len(st.session_state['tipdata']['Employees Worked'])} employees, \
-        #             totaling ${format(st.session_state['tipdata']['Total Wages Paid'], ',')}")
-        #     # revisePositionsWorked()
-        st.write('Raw Data')
-        st.dataframe(st.session_state['tipdata']['df_audit_deposits'])
-
+    InvoiceAccruals()
+    
 
 def run():
     col1, col2 = st.columns([8, 2])
@@ -275,18 +233,18 @@ def run():
         st.caption('')
         if 'loadedarchive' in st.session_state:
             st.caption(f'Loaded from Archive: {st.session_state["loadedarchive"]}')
-        publishbutton = st.empty()
-        if st.button('Clear Existing Data'):
-            st.session_state['updatedsomething'] = True
-            del st.session_state['tipdata']
-            publish()
+        # publishbutton = st.empty()
+        # if st.button('Clear Existing Data'):
+        #     st.session_state['updatedsomething'] = True
+        #     del st.session_state['tipdata']
+        #     publish()
     if st.session_state['tipdata'] != {}:
         # with st.container(height=650):
         showdata()
         # Publish needs to be at the end to allow for updates read in-line. st.empty container saves the space
-        if st.session_state['updatedsomething']:
-            if publishbutton.button('Publish Data', key='fromaudit0'):
-                publish()
+        # if st.session_state['updatedsomething']:
+        #     if publishbutton.button('Publish Data', key='fromaudit0'):
+        #         publish()
                 # st.switch_page("pages/tipping0.py")
     else:
         st.markdown('---')

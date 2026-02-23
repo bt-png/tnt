@@ -197,15 +197,15 @@ def show_AR(df_, ardate, armonth, formdata):
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
-        st.write(f" Total Selected: ${format(union_df['Amount Paid'].sum(),',')}")
+        st.write(f" Total Selected: ${format(union_df['Requested Amount'].sum(),',')}")
     col1, col2 = st.columns([3,8])
     with col1:
         st.write('Payment On')
-        val_PaymentOn = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date < datefilter]['Amount Paid'].sum()
+        val_PaymentOn = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date < datefilter]['Requested Amount'].sum()
         st.write(f" Total Current: ${format(val_PaymentOn,',')}")
     with col2:
         st.write('Pending Payment')
-        val_PendingPayment = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date >= datefilter]['Amount Paid'].sum()
+        val_PendingPayment = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date >= datefilter]['Requested Amount'].sum()
         st.write(f" Total Pending: ${format(val_PendingPayment,',')}")
     formdata['Debit'].iloc[4] = val_PaymentOn
     formdata['Credit'].iloc[3] = val_PaymentOn

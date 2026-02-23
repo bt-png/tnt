@@ -16,9 +16,9 @@ from sync import syncDataEditor
 dfs = ['df_accruals_invoices']
 
 
-def dataframe_with_selections(df, key_name):
+def dataframe_with_selections(df, key_name, default=False):
     df_with_selections = df.copy()
-    df_with_selections.insert(0, "Select", False)
+    df_with_selections.insert(0, "Select", default)
 
     # Get dataframe row-selections from user with st.data_editor
     edited_df = st.data_editor(
@@ -164,13 +164,14 @@ def show_EventCount(df_, ardate, armonth, formdata):
         deposit = st.number_input('Event Deposit', value=500)
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
     df_Accrual = df_[df_['Event Month'] == armonth].reset_index()
-    col1, col2 = st.columns([3,8])
-    with col1:
-        st.write(f" Total Events: {format(len(df_Accrual),'0.0f')}")
-    with col2:
-        st.write("Your selection:")
-        st.dataframe(df_Accrual, column_order=InvoiceColumns(), width=1200)
-    val = deposit * len(df_Accrual)
+    # col1, col2 = st.columns([3,8])
+    # with col1:
+    selection = dataframe_with_selections(df_Accrual, 'eventcounts', True)
+    st.write(f" Total Events: {format(len(selection),'0.0f')}")
+    # with col2:
+        # st.write("Your selection:")
+        # st.dataframe(df_Accrual, column_order=InvoiceColumns(), width=1200)
+    val = deposit * len(selection)
     st.markdown(f"##### Total Deposits Paid: ${format(val,',.2f')}")
     formdata['Debit'].iloc[9] = format(val,'0.2f')
     formdata['Credit'].iloc[10] = format(val,'0.2f')

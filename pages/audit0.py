@@ -243,7 +243,7 @@ def InvoiceAccruals(files):
                 # Adjustment for payment processing delay
                 df_invoice['Last Payment Date Processed'] = df_invoice['Last Payment Date'] + timedelta(days=3)
                 df_invoice = addMonthName(df_invoice, 'Last Payment Date Processed', 'Payment Month')
-                st.dataframe(df_invoice)
+                # st.dataframe(df_invoice)
                 df_invoice = addMonthName(df_invoice, 'Event date', 'Event Month')
                 eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
                 df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]

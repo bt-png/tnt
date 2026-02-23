@@ -182,10 +182,12 @@ def InvoiceColumns():
 
 
 def show_AR(df_, ardate, armonth):
-    st.write('AR')
+    st.markdown('## AR')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
     df_Accrual = df_[
-        (df_['Last Payment Date Processed'].dt.date >= datefilter) & (df_['Event Month'] == armonth)
+        (df_['Last Payment Date Processed'].dt.date >= datefilter) & 
+        (df_['Event Month'] == armonth) &
+        (df_['Payment Month'] != df_['Event Month'])
                      ].groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     # df_Accrual = df_[df_['Event Month'] == armonth].groupby('Last Payment for Event Date').agg(
@@ -201,10 +203,12 @@ def show_AR(df_, ardate, armonth):
 
 
 def show_FuturePE(df_, ardate, armonth):
-    st.write('Future PE Deposit')
+    st.markdown('## Future PE Deposit')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
     df_Accrual = df_[
-        (df_['Event date'].dt.date >= datefilter) & (df_['Payment Month'] == armonth)
+        (df_['Event date'].dt.date >= datefilter) & 
+        (df_['Payment Month'] == armonth) &
+        (df_['Payment Month'] != df_['Event Month'])
                      ].groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
@@ -217,6 +221,19 @@ def show_FuturePE(df_, ardate, armonth):
     st.write(f" Total Future PE: ${format(df_Accrual['AccrualTotal'].sum(),',')}")
 
 
+def show_EventCount(df_, ardate, armonth):
+    st.markdown('## Event Count')
+    datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
+    df_Accrual = df_[df_['Event Month'] == armonth].reset_index()
+    col1, col2 = st.columns([3,8])
+    with col1:
+        st.write(f" Total Events: {format(len(df_Accrual),',')}")
+    with col2:
+        st.write("Your selection:")
+        st.dataframe(df_Accrual, column_order=InvoiceColumns(), width=1200)
+    
+
+
 def InvoiceAccruals(files):
     for file in files:
         try:
@@ -226,7 +243,6 @@ def InvoiceAccruals(files):
         if 'Invoice Token' == dataframe.columns[0]:
             st.markdown('---')
             st.markdown('### Invoice Accruals')
-            
             df_invoice = dataframe.copy() 
             # st.write(df_invoice['Status'].unique())
             drop_list = ['Canceled', 'Refunded', 'Unpaid']
@@ -245,12 +261,14 @@ def InvoiceAccruals(files):
                 df_invoice = addMonthName(df_invoice, 'Last Payment Date Processed', 'Payment Month')
                 # st.dataframe(df_invoice)
                 df_invoice = addMonthName(df_invoice, 'Event date', 'Event Month')
-                eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
+                col1, col2, col3 = st.columns([1,1,6])
+                with col1:
+                    eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
                 df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
                 df_invoice.reset_index(drop=True, inplace=True)
                 st.write('Raw Data')
                 st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
-                df_inv_accr = df_invoice[(df_invoice['Payment Month'] != df_invoice['Event Month']) & (df_invoice['Event date'].dt.year.astype(str) == str(eventyear))]
+                df_inv_accr = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
                 df_inv_accr['Last Payment for Event Date'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
                 st.markdown('---')
                 col1, col2, col3 = st.columns([1,1,6])
@@ -260,7 +278,7 @@ def InvoiceAccruals(files):
                 armonth = month_names[ardate.month]+'-'+str(ardate.year)
                 show_AR(df_inv_accr, ardate, armonth)
                 show_FuturePE(df_inv_accr, ardate, armonth)
-                # Sum Requested Payment Date for Event Date
+                show_EventCount(df_inv_accr, ardate, armonth)
     
 
 def run():

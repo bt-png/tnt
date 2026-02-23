@@ -163,7 +163,7 @@ def show_EventCount(df_, ardate, armonth, formdata):
     with col1:
         deposit = st.number_input('Event Deposit', value=500)
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    df_Accrual = df_[df_['Event Month'] == armonth].reset_index()
+    df_Accrual = df_[df_['Event Month'] == armonth].reset_index(drop=True)
     # col1, col2 = st.columns([3,8])
     # with col1:
     selection = dataframe_with_selections(df_Accrual, 'eventcounts', True)

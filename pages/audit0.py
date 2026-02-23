@@ -14,7 +14,7 @@ from sync import syncDataEditor
 dfs = ['df_accruals_invoices']
 
 
-def dataframe_with_selections(df):
+def dataframe_with_selections(df, key_name):
     df_with_selections = df.copy()
     df_with_selections.insert(0, "Select", False)
 
@@ -23,7 +23,7 @@ def dataframe_with_selections(df):
         df_with_selections,
         hide_index=True,
         column_config={"Select": st.column_config.CheckboxColumn(required=True)},
-        disabled=df.columns,
+        disabled=df.columns, key=key_name
     )
 
     # Filter the dataframe using the temporary column, then drop the column
@@ -180,13 +180,9 @@ def InvoiceColumns():
     return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Payment Month', 'Amount Paid', 'Event date', 'Event Month']
 
 
-def show_AR(df_):
+def show_AR(df_, armonth):
     st.write('AR')
-    col1, col2, col3 = st.columns([1,1,6])
-    with col1:
-        ardate = st.date_input('Event Month') #, value=df_['Event date'].iloc[-1].date())
-    # with col2:
-    armonth = month_names[ardate.month]+'-'+str(ardate.year)
+    
     #     st.write(armonth)
     # datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
     # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
@@ -196,7 +192,24 @@ def show_AR(df_):
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
-        selection = dataframe_with_selections(df_Accrual)
+        selection = dataframe_with_selections(df_Accrual, 'ar')
+    with col2:
+        st.write("Your selection:")
+        union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
+        st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
+
+
+def show_FuturePE(df_, armonth):
+    st.write('Future PE Deposit')
+    # datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
+    # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
+    # df_Accrual = df_[df_['Event Month'].dt.date < datefilter].groupby('grouping').agg(
+    #     AccrualTotal=('Amount Paid', 'sum')).reset_index()
+    df_Accrual = df_[df_['Payment Month'] == armonth].groupby('Last Payment for Event Date').agg(
+        AccrualTotal=('Amount Paid', 'sum')).reset_index()
+    col1, col2 = st.columns([3,8])
+    with col1:
+        selection = dataframe_with_selections(df_Accrual, 'futurepe')
     with col2:
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
@@ -234,8 +247,14 @@ def InvoiceAccruals(files):
                 st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
                 df_inv_accr = df_invoice[(df_invoice['Payment Month'] != df_invoice['Event Month']) & (df_invoice['Event date'].dt.year.astype(str) == str(eventyear))]
                 df_inv_accr['Last Payment for Event Date'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
-                show_AR(df_inv_accr)
-                
+                st.markdown('---')
+                col1, col2, col3 = st.columns([1,1,6])
+                with col1:
+                    ardate = st.date_input('Event Month') #, value=df_['Event date'].iloc[-1].date())
+                st.markdown('---')
+                armonth = month_names[ardate.month]+'-'+str(ardate.year)
+                show_AR(df_inv_accr, armonth)
+                show_FuturePE(df_inv_accr, armonth)
                 # Sum Requested Payment Date for Event Date
     
 

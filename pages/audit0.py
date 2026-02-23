@@ -205,7 +205,8 @@ def show_AR(df_, ardate, armonth, formdata):
     df_sorted = pd.concat([df_Prior, df_Pending], ignore_index=True)
     df_sorted.reset_index(inplace=True)
     df_sorted = df_sorted.groupby('Last Payment for Event Date').agg(
-        AccrualTotal=('Requested Amount', 'sum')).reset_index()
+        RequestedTotal=('Requested Amount', 'sum'),
+        Counts=('Requested Amount', 'count')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
         selection = dataframe_with_selections(df_sorted, 'ar')

@@ -192,14 +192,14 @@ def show_AR(df_):
     # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
     # df_Accrual = df_[df_['Event Month'].dt.date < datefilter].groupby('grouping').agg(
     #     AccrualTotal=('Amount Paid', 'sum')).reset_index()
-    df_Accrual = df_[df_['Event Month'] == armonth].groupby('grouping').agg(
+    df_Accrual = df_[df_['Event Month'] == armonth].groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
         selection = dataframe_with_selections(df_Accrual)
     with col2:
         st.write("Your selection:")
-        union_df = pd.merge(selection, df_, on='grouping', how='inner')
+        union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
 
 
@@ -233,7 +233,7 @@ def InvoiceAccruals(files):
                 st.write('Raw Data')
                 st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
                 df_inv_accr = df_invoice[(df_invoice['Payment Month'] != df_invoice['Event Month']) & (df_invoice['Event date'].dt.year.astype(str) == str(eventyear))]
-                df_inv_accr['grouping'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
+                df_inv_accr['Last Payment for Event Date'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
                 show_AR(df_inv_accr)
                 
                 # Sum Requested Payment Date for Event Date

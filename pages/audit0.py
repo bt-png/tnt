@@ -184,10 +184,8 @@ def InvoiceColumns():
 def show_AR(df_, ardate, armonth):
     st.write('AR')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    datefilter = datefilter + timedelta(days=-4)
-    st.write(datefilter)
     df_Accrual = df_[
-        (df_['Last Payment Date'].dt.date > datefilter) & (df_['Event Month'] == armonth)
+        (df_['Last Payment Date Processed'].dt.date >= datefilter) & (df_['Event Month'] == armonth)
                      ].groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     # df_Accrual = df_[df_['Event Month'] == armonth].groupby('Last Payment for Event Date').agg(
@@ -206,7 +204,7 @@ def show_FuturePE(df_, ardate, armonth):
     st.write('Future PE Deposit')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
     df_Accrual = df_[
-        (df_['Event date'].dt.date > datefilter) & (df_['Payment Month'] == armonth)
+        (df_['Event date'].dt.date >= datefilter) & (df_['Payment Month'] == armonth)
                      ].groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
@@ -242,6 +240,10 @@ def InvoiceAccruals(files):
                 except Exception:
                     pass
                 df_invoice = addMonthName(df_invoice, 'Last Payment Date', 'Payment Month')
+                # Adjustment for payment processing delay
+                df_invoice['Last Payment Date Processed'] = df_invoice['Last Payment Date'] + timedelta(days=3)
+                df_invoice = addMonthName(df_invoice, 'Last Payment Date Processed', 'Payment Month')
+                st.dataframe(df_invoice)
                 df_invoice = addMonthName(df_invoice, 'Event date', 'Event Month')
                 eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
                 df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]

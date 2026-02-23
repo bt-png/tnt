@@ -64,7 +64,7 @@ def filter_RawData(df):
     _df = df.copy()
     col1, col2 = st.columns([8,2])
     col2.write('Apply filters')
-    to_filter_columns = ('Inv Num', 'Customer Name', 'Status', 'Payment Month', 'Event Month')#st.multiselect("Filter dataframe on", df.columns)
+    to_filter_columns = ('Event Year', 'Inv Num', 'Customer Name', 'Status', 'Payment Month', 'Event Month')#st.multiselect("Filter dataframe on", df.columns)
     for column in to_filter_columns:
         user_cat_input = col2.multiselect(
             f"Filter on {column}",
@@ -225,16 +225,17 @@ def InvoiceAccruals(files):
                 df_invoice = addMonthName(df_invoice, 'Last Payment Date Processed', 'Payment Month')
                 # st.dataframe(df_invoice)
                 df_invoice = addMonthName(df_invoice, 'Event date', 'Event Month')
-                col1, col2, col3 = st.columns([1,1,6])
-                with col1:
-                    eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
-                df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
-                df_invoice.reset_index(drop=True, inplace=True)
+                # col1, col2, col3 = st.columns([1,1,6])
+                # with col1:
+                #     eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
+                # df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
+                # df_invoice.reset_index(drop=True, inplace=True)
                 st.write('Raw Data')
-                filter_RawData(df_invoice)
+                # filter_RawData(df_invoice)
                 # st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
-                df_inv_accr = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
-                df_inv_accr['Last Payment for Event Date'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
+                df_invoice['Event Year'] = df_invoice['Event date'].dt.year.astype(str)
+                df_invoice['Last Payment for Event Date'] = df_invoice['Payment Month'] + ' for ' + df_invoice['Event Month']
+                filter_RawData(df_invoice)
                 st.markdown('---')
                 col1, col2, col3 = st.columns([1,1,6])
                 with col1:
@@ -254,9 +255,9 @@ def InvoiceAccruals(files):
                         'Credit': ['', 0, '', 0, '', '', '', 0, '', '', 0, '', 0, '', '', '', 0], 
                         'Memo': ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']}
                         )
-                show_AR(df_inv_accr, ardate, armonth, formdata)
-                show_FuturePE(df_inv_accr, ardate, armonth, formdata)
-                show_EventCount(df_inv_accr, ardate, armonth, formdata)
+                show_AR(df_invoice, ardate, armonth, formdata)
+                show_FuturePE(df_invoice, ardate, armonth, formdata)
+                show_EventCount(df_invoice, ardate, armonth, formdata)
                 show_ARForm(formdata, armonth)
     
 

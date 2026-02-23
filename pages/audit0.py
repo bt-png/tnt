@@ -192,7 +192,7 @@ def show_AR(df_, ardate, armonth, formdata):
                      ]
     st.dataframe(df_Pending, column_order=InvoiceColumns())
     st.markdown('---')
-    st.stop()
+
     st.markdown('---')
     st.write('Payment On Prior Events')
     df_Prior = df_[ 
@@ -202,6 +202,7 @@ def show_AR(df_, ardate, armonth, formdata):
                      ]
     st.dataframe(df_Prior, column_order=InvoiceColumns())
     st.markdown('---')
+    st.stop()
     df_Prior_sorted = df_Prior.groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Requested Amount', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])

@@ -174,7 +174,7 @@ def addMonthName(df_, column_to_check, new_name):
 
 
 def InvoiceColumns():
-    return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Amount Paid', 'Event Date', 'Payment Month', 'Event Month']
+    return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Amount Paid', 'Event date', 'Payment Month', 'Event Month']
 
 
 def InvoiceAccruals(files):

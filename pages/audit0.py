@@ -184,13 +184,15 @@ def InvoiceColumns():
 def show_AR(df_, ardate, armonth, formdata):
     st.markdown('## AR')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    df_Accrual = df_[ 
-        (df_['Event Month'] == armonth) &
+    
+    st.markdown('---')
+    st.write('Payment On Prior Events')
+    df_Prior = df_[ 
+        (df_['Payment Month'] == armonth) &
+        (df_['Last Payment Date Processed'].dt.date >= datefilter) &
         (df_['Payment Month'] != df_['Event Month'])
                      ]
-    st.markdown('---')
-    st.write('Events this month')
-    st.dataframe(df_Accrual, column_order=InvoiceColumns())
+    st.dataframe(df_Prior, column_order=InvoiceColumns())
     st.markdown('---')
     st.stop()
     df_sorted = df_Accrual.groupby('Last Payment for Event Date').agg(

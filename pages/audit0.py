@@ -239,7 +239,7 @@ def show_FuturePE(df_, ardate, armonth, formdata):
         (df_['Payment Month'] != df_['Event Month'])
                      ].groupby('Last Payment for Event Date').agg(
         PaidTotal=('Amount Paid', 'sum'),
-        Counts=('Requested Amount', 'count')).reset_index()
+        Counts=('Amount Paid', 'count')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
         selection = dataframe_with_selections(df_Accrual, 'futurepe')
@@ -247,6 +247,7 @@ def show_FuturePE(df_, ardate, armonth, formdata):
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
+        st.write(f" Total Selected: ${format(union_df['Amount Paid'].sum(),',')}")
     val = df_Accrual['PaidTotal'].sum()
     st.write(f" Total Future PE: ${format(val,',')}")
     formdata['Debit'].iloc[13] = val

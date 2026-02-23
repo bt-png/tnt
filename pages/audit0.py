@@ -60,6 +60,22 @@ def string_list(data, before, after):
     return ''
 
 
+def filter_RawData(df):
+    _df = df.copy()
+    col1, col2 = st.columns([8,2])
+    col2.write('Apply filters')
+    to_filter_columns = ('Inv Num', 'Customer Name', 'Status', 'Payment Month', 'Event Month')#st.multiselect("Filter dataframe on", df.columns)
+    for column in to_filter_columns:
+        user_cat_input = col2.multiselect(
+            f"Filter on {column}",
+            _df[column].unique(),
+        )
+        if len(user_cat_input) > 0:
+            _df = _df[_df[column].isin(user_cat_input)]
+    Height = int(35.2 * (12 + 1))
+    col1.dataframe(_df, height=Height, hide_index=True, column_order=InvoiceColumns())
+    
+
 def show_AR(df_, ardate, armonth, formdata):
     st.markdown('## AR')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
@@ -98,11 +114,11 @@ def show_AR(df_, ardate, armonth, formdata):
     with col1:
         # st.write('Payment On Prior Events')
         val_PaymentOn = df_Prior['Requested Amount'].sum()
-        st.write(f" Prior Requested Total: ${format(round(val_PaymentOn,2),',.2f')}") 
+        st.markdown(f"##### Prior Requested Total: ${format(round(val_PaymentOn,2),',.2f')}") 
     with col2:
         # st.write('Pending Payment')
         val_PendingPayment = df_Pending['Requested Amount'].sum()
-        st.write(f" Pending Requested Total: ${format(val_PendingPayment,',.2f')}")
+        st.markdown(f"##### Pending Requested Total: ${format(val_PendingPayment,',.2f')}")
     formdata['Debit'].iloc[4] = format(val_PaymentOn,'0.2f')
     formdata['Credit'].iloc[3] = format(val_PaymentOn,'0.2f')
     formdata['Memo'].iloc[3] = string_list(df_Prior['Inv Num'],'payment on '+ armonth+ ' events (Inv #',')')
@@ -133,7 +149,7 @@ def show_FuturePE(df_, ardate, armonth, formdata):
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
         st.write(f" Selected Paid: ${format(union_df['Amount Paid'].sum(),',.2f')}")
     val = df_Accrual['PaidTotal'].sum()
-    st.write(f" Total Paid Future PE: ${format(val,',.2f')}")
+    st.markdown(f"##### Total Paid Future PE: ${format(val,',.2f')}")
     formdata['Debit'].iloc[13] = format(val,'0.2f')
     formdata['Credit'].iloc[12] = format(val,'0.2f')
     formdata['Memo'].iloc[12] = 'Deposit for Future PE'
@@ -155,7 +171,7 @@ def show_EventCount(df_, ardate, armonth, formdata):
         st.write("Your selection:")
         st.dataframe(df_Accrual, column_order=InvoiceColumns(), width=1200)
     val = deposit * len(df_Accrual)
-    st.write(f" Total Deposits Paid: ${format(val,',.2f')}")
+    st.markdown(f"##### Total Deposits Paid: ${format(val,',.2f')}")
     formdata['Debit'].iloc[9] = format(val,'0.2f')
     formdata['Credit'].iloc[10] = format(val,'0.2f')
     formdata['Memo'].iloc[9] = 'Deposits from ' + armonth + ' Events'
@@ -169,7 +185,8 @@ def show_ARForm(formdata, armonth):
     formdata['Memo'].iloc[1] = formdata['Memo'].iloc[0]
     formdata['Memo'].iloc[6] = armonth + 'GC Sales (SQ + gift up!)'
     formdata['Memo'].iloc[7] = formdata['Memo'].iloc[6]
-    st.dataframe(formdata, hide_index=True, width=800)
+    Height = int(35.2 * (len(formdata) + 1))
+    st.dataframe(formdata, hide_index=True, width=800, height=Height)
 
 
 def InvoiceAccruals(files):
@@ -214,7 +231,8 @@ def InvoiceAccruals(files):
                 df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
                 df_invoice.reset_index(drop=True, inplace=True)
                 st.write('Raw Data')
-                st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
+                filter_RawData(df_invoice)
+                # st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
                 df_inv_accr = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
                 df_inv_accr['Last Payment for Event Date'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
                 st.markdown('---')

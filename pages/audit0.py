@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
+import re
 from datetime import timedelta
 from company import publish
 from company import servertipdata
@@ -178,7 +179,15 @@ def addMonthName(df_, column_to_check, new_name):
 
 
 def InvoiceColumns():
-    return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Payment Month', 'Amount Paid', 'Event date', 'Event Month']
+    return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Payment Month', 'Amount Paid', 'Event date', 'Event Month', 'Inv Num']
+
+
+def string_list(data, before, after):
+    if len(data)>0:
+        val = ', '.join(data.sort_values().to_list())
+        val = before + val + after
+        return val
+    return ''
 
 
 def show_AR(df_, ardate, armonth, formdata):
@@ -214,20 +223,24 @@ def show_AR(df_, ardate, armonth, formdata):
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
-        st.write(f" Total Selected: ${format(union_df['Requested Amount'].sum(),',')}")
+        st.write(f" Total Selected: ${format(union_df['Requested Amount'].sum(),'0.2f')}")
     col1, col2 = st.columns([3,8])
     with col1:
         st.write('Payment On Prior Events')
         val_PaymentOn = df_Prior['Requested Amount'].sum()
-        st.write(f" Total Current: ${format(val_PaymentOn,',')}")
+        st.write(f" Total Current: ${format(round(val_PaymentOn,2),'0.2f')}") 
     with col2:
         st.write('Pending Payment')
         val_PendingPayment = df_Pending['Requested Amount'].sum()
-        st.write(f" Total Pending: ${format(val_PendingPayment,',')}")
-    formdata['Debit'].iloc[4] = val_PaymentOn
-    formdata['Credit'].iloc[3] = val_PaymentOn
-    formdata['Debit'].iloc[15] = val_PendingPayment
-    formdata['Credit'].iloc[16] = val_PendingPayment
+        st.write(f" Total Pending: ${format(val_PendingPayment,'0.2f')}")
+    formdata['Debit'].iloc[4] = format(val_PaymentOn,'0.2f')
+    formdata['Credit'].iloc[3] = format(val_PaymentOn,'0.2f')
+    formdata['Memo'].iloc[3] = string_list(df_Prior['Inv Num'],'payment on '+ armonth+ ' events (Inv #',')')
+    formdata['Memo'].iloc[4] = formdata['Memo'].iloc[3]
+    formdata['Debit'].iloc[15] = format(val_PendingPayment,'0.2f')
+    formdata['Credit'].iloc[16] = format(val_PendingPayment,'0.2f')
+    formdata['Memo'].iloc[15] = string_list(df_Pending['Inv Num'],'Pending payment on '+ armonth+ ' events (Inv #',')')
+    formdata['Memo'].iloc[16] = formdata['Memo'].iloc[15]
 
 
 def show_FuturePE(df_, ardate, armonth, formdata):
@@ -247,11 +260,13 @@ def show_FuturePE(df_, ardate, armonth, formdata):
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
         st.dataframe(union_df, column_order=InvoiceColumns(), width=1200)
-        st.write(f" Total Selected: ${format(union_df['Amount Paid'].sum(),',')}")
+        st.write(f" Total Selected: ${format(union_df['Amount Paid'].sum(),'0.2f')}")
     val = df_Accrual['PaidTotal'].sum()
-    st.write(f" Total Future PE: ${format(val,',')}")
-    formdata['Debit'].iloc[13] = val
-    formdata['Credit'].iloc[12] = val
+    st.write(f" Total Future PE: ${format(val,'0.2f')}")
+    formdata['Debit'].iloc[13] = format(val,'0.2f')
+    formdata['Credit'].iloc[12] = format(val,'0.2f')
+    formdata['Memo'].iloc[12] = 'Deposit for Future PE'
+    formdata['Memo'].iloc[13] = formdata['Memo'].iloc[12]
 
 
 def show_EventCount(df_, ardate, armonth, formdata):
@@ -263,19 +278,25 @@ def show_EventCount(df_, ardate, armonth, formdata):
     df_Accrual = df_[df_['Event Month'] == armonth].reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
-        st.write(f" Total Events: {format(len(df_Accrual),',')}")
+        st.write(f" Total Events: {format(len(df_Accrual),'0.0f')}")
     with col2:
         st.write("Your selection:")
         st.dataframe(df_Accrual, column_order=InvoiceColumns(), width=1200)
     val = deposit * len(df_Accrual)
-    st.write(f" Total Deposits: ${format(val,',')}")
-    formdata['Debit'].iloc[9] = val
-    formdata['Credit'].iloc[10] = val
+    st.write(f" Total Deposits: ${format(val,'0.2f')}")
+    formdata['Debit'].iloc[9] = format(val,'0.2f')
+    formdata['Credit'].iloc[10] = format(val,'0.2f')
+    formdata['Memo'].iloc[9] = 'Deposits from ' + armonth + ' Events'
+    formdata['Memo'].iloc[10] = formdata['Memo'].iloc[9]
     
 
-def show_ARForm(formdata):
+def show_ARForm(formdata, armonth):
     st.markdown('## Form')
-    st.dataframe(formdata, hide_index=True)
+    formdata['Memo'].iloc[0] = 'Invoice ____forfeit'
+    formdata['Memo'].iloc[1] = formdata['Memo'].iloc[0]
+    formdata['Memo'].iloc[6] = armonth + 'GC Sales (SQ + gift up!)'
+    formdata['Memo'].iloc[7] = formdata['Memo'].iloc[6]
+    st.dataframe(formdata, hide_index=True, width=800)
 
 
 def InvoiceAccruals(files):
@@ -301,6 +322,11 @@ def InvoiceAccruals(files):
                     df_invoice['Requested Amount'] = df_invoice['Requested Amount'].str.replace(',', '', regex=False)
                     df_invoice['Requested Amount'] = df_invoice['Requested Amount'].astype(float)
                     df_invoice['Requested Amount'] = df_invoice['Requested Amount'].replace('', 0)
+                    pattern = r'(\d+)'
+                    df_invoice['Inv Num'] = df_invoice['Invoice ID'].astype(str).str.extract(pattern, expand=False)
+                    condition = df_invoice['Inv Num'].notna()
+                    df_invoice.loc[condition, 'Inv Num'] = \
+                        df_invoice.loc[condition, 'Inv Num'].astype(float).astype(int).astype(str)
                 except Exception:
                     pass
                 df_invoice = addMonthName(df_invoice, 'Last Payment Date', 'Payment Month')
@@ -340,7 +366,7 @@ def InvoiceAccruals(files):
                 show_AR(df_inv_accr, ardate, armonth, formdata)
                 show_FuturePE(df_inv_accr, ardate, armonth, formdata)
                 show_EventCount(df_inv_accr, ardate, armonth, formdata)
-                show_ARForm(formdata)
+                show_ARForm(formdata, armonth)
     
 
 def run():

@@ -189,7 +189,7 @@ def show_AR(df_, ardate, armonth, formdata):
         (df_['Payment Month'] != df_['Event Month'])
                      ]
     df_sorted = df_Accrual.groupby('Last Payment for Event Date').agg(
-        AccrualTotal=('Amount Paid', 'sum')).reset_index()
+        AccrualTotal=('Requested Amount', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
         selection = dataframe_with_selections(df_sorted, 'ar')
@@ -278,6 +278,10 @@ def InvoiceAccruals(files):
                     df_invoice['Amount Paid'] = df_invoice['Amount Paid'].str.replace(',', '', regex=False)
                     df_invoice['Amount Paid'] = df_invoice['Amount Paid'].astype(float)
                     df_invoice['Amount Paid'] = df_invoice['Amount Paid'].replace('', 0)
+                    df_invoice['Requested Amount'] = df_invoice['Requested Amount'].str.replace('$', '', regex=False)
+                    df_invoice['Requested Amount'] = df_invoice['Requested Amount'].str.replace(',', '', regex=False)
+                    df_invoice['Requested Amount'] = df_invoice['Requested Amount'].astype(float)
+                    df_invoice['Requested Amount'] = df_invoice['Requested Amount'].replace('', 0)
                 except Exception:
                     pass
                 df_invoice = addMonthName(df_invoice, 'Last Payment Date', 'Payment Month')

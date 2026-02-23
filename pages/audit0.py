@@ -33,136 +33,6 @@ def dataframe_with_selections(df, key_name):
     return selected_rows.drop('Select', axis=1)
 
 
-# def clear_save_data():
-#     # st.session_state['newtipdata'] = {}
-#     bitfile = None  # json.dumps(st.session_state['newdict'])
-#     # Save locally during testing
-#     try:
-#         with open('current_save.csv', 'w') as file:
-#             file.write(bitfile)
-#         st.success('Save Data Has been Saved')
-#     except Exception:
-#         st.warning('Something went wrong')
-#     st.session_state['tipdata'] = {}
-
-
-# def loadTotalWorkedHours():
-#     df = st.session_state['tipdata']['df_work_hours']
-#     st.session_state['tipdata']['Total Hours Worked'] = round(df['Regular'].sum(), 2)
-#     st.session_state['tipdata']['Employees Worked'] = df['Employee Name'].unique()
-#     st.session_state['tipdata']['Total Wages Paid'] = df['Paid Total'].sum()
-
-
-# def loadWorkPositionList():
-#     df = st.session_state['tipdata']['df_work_hours']
-#     workedpositions = list(df['Position'].dropna().unique())
-#     defaultpositions = clientGetValue(st.session_state['company'], 'overridepositions')
-#     allpositions = list(set(workedpositions + defaultpositions))
-#     allpositions.sort()
-#     st.session_state['tipdata']['Available Work Positions'] = allpositions
-
-
-# def loadTotalTips():
-#     df = st.session_state['tipdata']['df_sales']
-#     st.session_state['tipdata']['Raw Pool'] = round(df['Tip'].sum(), 2)
-#     st.session_state['tipdata']['Total Pool'] = round(df['Tip'].sum(), 2)
-
-
-# def loadShiftsWorked():
-#     dataframe = st.session_state['tipdata']['df_schedule'].copy()
-#     dataframe = dataframe.groupby(['Employee Name']).agg({'Shifts Worked': 'sum'})
-#     dataframe.sort_values(by=['Employee Name'], inplace=True)
-#     st.session_state['tipdata']['work_shifts'] = dataframe.copy()  # to_dict()
-
-# def updateChefShiftsWorked():
-#     if 'work_shifts' not in st.session_state:
-#         loadShiftsWorked()
-#     df = st.session_state['tipdata']['work_shifts'].copy()
-#     dataframe = st.session_state['tipdata']['df_schedule'].copy()
-#     st.write(dataframe)
-
-
-
-# def save_csv():
-#     df = st.session_state['tipdata']['df_work_hours']
-#     bitfile = df.to_csv()
-#     # st.write(bitfile)
-#     try:
-#         with open('current_input.csv', 'w') as file:
-#             file.write(bitfile)
-#         st.success('Work Hours CSV has been Saved')
-#     except Exception:
-#         st.warning('Something went wrong')
-
-
-# def loadFilestoSessionState(files):
-#     for df in dfs:
-#         if df not in st.session_state['tipdata']:
-#             st.session_state['tipdata'][df] = None
-#     for file in files:
-#         try:
-#             dataframe = pd.read_csv(file)
-#         except Exception:
-#             dataframe = pd.read_excel(file)
-#         if 'Invoice Token' == dataframe.columns[0]:
-#             if not dataframe.equals(st.session_state['tipdata']['df_accruals_invoices']):
-#                     st.session_state['updatedsomething'] = True
-#                     st.session_state['tipdata']['df_accruals_invoices'] = dataframe.copy()
-#             st.dataframe(dataframe)
-#         if 'Transaction Report' == dataframe.columns[0]:
-#             dfname = ''
-#             if 'Prepaid' in dataframe[dataframe.columns[0]][4]:
-#                 dfname = 'df_audit_deposits'
-#             elif 'Sales' in dataframe[dataframe.columns[0]][4]:
-#                 dfname = 'df_audit_sales'
-#             if len(dfname) > 0:
-#                 dataframe.drop(labels=[0, 1, 2], axis=0, inplace=True)
-#                 dataframe.drop(labels=dataframe.columns[0], axis=1, inplace=True)
-#                 dataframe.columns = dataframe.iloc[0]
-#                 dataframe.reset_index(drop=True, inplace=True)
-#                 # dataframe.drop(labels=[5], axis=0, inplace=True)
-#                 column_to_check = dataframe.columns[0]
-#                 value_to_find = 'TOTAL'
-#                 if column_to_check in dataframe.columns:
-#                     total_row_index = dataframe[dataframe[column_to_check].astype(str).str.contains(value_to_find, case=False, na=False)].index
-#                     if not total_row_index.empty:
-#                         first_total_idx = total_row_index[0]
-#                         dataframe = dataframe.loc[3:first_total_idx - 2]# dataframe = dataframe.loc[3:]
-#                 dataframe.reset_index(drop=True, inplace=True)
-#                 if not dataframe.equals(st.session_state['tipdata'][dfname]):
-#                     st.session_state['updatedsomething'] = True
-#                     st.session_state['tipdata'][dfname] = dataframe.copy()
-#                 st.dataframe(dataframe)
-
-
-# def allDataFramesLoaded():
-#     checkSum = 0
-#     if st.session_state['tipdata']['df_accruals_invoices'] is not None:
-#         checkSum += 1
-#     else:
-#         st.warning('Invoices Data has not been loaded.')
-#     # if st.session_state['tipdata']['df_audit_deposits'] is not None:
-#     #     checkSum += 1
-#     # else:
-#     #     st.warning('Deposits Audit Data has not been loaded.')
-#     if checkSum == len(dfs):
-#         st.success('All Data has been loaded!')
-#         return True
-#     return False
-
-
-# def upload():
-#     col1, col2 = st.columns([1, 1])
-#     with col1.popover('Upload 2 Files'):
-#         files = st.file_uploader('Upload 2 Files', type=['csv', 'xlsx'], accept_multiple_files=True, key='fileuploader')
-#         if len(files) > 0:
-#             loadFilestoSessionState(files)
-#             if allDataFramesLoaded():
-#                 return True
-#                 # _process.continue_run(st.session_state['df_work_hours'])
-#             return True
-#     return False
-
 month_names = {
         1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
         7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'
@@ -244,6 +114,7 @@ def show_AR(df_, ardate, armonth, formdata):
 
 
 def show_FuturePE(df_, ardate, armonth, formdata):
+    st.markdown('---')
     st.markdown('## Future PE Deposit')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
     df_Accrual = df_[
@@ -270,6 +141,7 @@ def show_FuturePE(df_, ardate, armonth, formdata):
 
 
 def show_EventCount(df_, ardate, armonth, formdata):
+    st.markdown('---')
     st.markdown('## Event Count')
     col1, col2, col3 = st.columns([1,1,6])
     with col1:
@@ -291,7 +163,8 @@ def show_EventCount(df_, ardate, armonth, formdata):
     
 
 def show_ARForm(formdata, armonth):
-    st.markdown('## Form')
+    st.markdown('---')
+    st.markdown('## AR Form for ' + armonth)
     formdata['Memo'].iloc[0] = 'Invoice ____forfeit'
     formdata['Memo'].iloc[1] = formdata['Memo'].iloc[0]
     formdata['Memo'].iloc[6] = armonth + 'GC Sales (SQ + gift up!)'

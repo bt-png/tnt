@@ -194,12 +194,11 @@ def show_AR(df_, ardate, armonth, formdata):
                      ]
     st.dataframe(df_Prior, column_order=InvoiceColumns())
     st.markdown('---')
-    st.stop()
-    df_sorted = df_Accrual.groupby('Last Payment for Event Date').agg(
+    df_Prior_sorted = df_Prior.groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Requested Amount', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
-        selection = dataframe_with_selections(df_sorted, 'ar')
+        selection = dataframe_with_selections(df_Prior_sorted, 'ar')
     with col2:
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
@@ -208,16 +207,16 @@ def show_AR(df_, ardate, armonth, formdata):
     col1, col2 = st.columns([3,8])
     with col1:
         st.write('Payment On')
-        val_PaymentOn = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date < datefilter]['Requested Amount'].sum()
+        val_PaymentOn = df_Prior_sorted[df_Prior_sorted['Last Payment Date Processed'].dt.date < datefilter]['Requested Amount'].sum()
         st.write(f" Total Current: ${format(val_PaymentOn,',')}")
-    with col2:
-        st.write('Pending Payment')
-        val_PendingPayment = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date >= datefilter]['Requested Amount'].sum()
-        st.write(f" Total Pending: ${format(val_PendingPayment,',')}")
+    # with col2:
+    #     st.write('Pending Payment')
+    #     val_PendingPayment = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date >= datefilter]['Requested Amount'].sum()
+    #     st.write(f" Total Pending: ${format(val_PendingPayment,',')}")
     formdata['Debit'].iloc[4] = val_PaymentOn
     formdata['Credit'].iloc[3] = val_PaymentOn
-    formdata['Debit'].iloc[15] = val_PendingPayment
-    formdata['Credit'].iloc[16] = val_PendingPayment
+    # formdata['Debit'].iloc[15] = val_PendingPayment
+    # formdata['Credit'].iloc[16] = val_PendingPayment
 
 
 def show_FuturePE(df_, ardate, armonth, formdata):

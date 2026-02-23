@@ -188,6 +188,10 @@ def show_AR(df_, ardate, armonth, formdata):
         (df_['Event Month'] == armonth) &
         (df_['Payment Month'] != df_['Event Month'])
                      ]
+    st.markdown('---')
+    st.dataframe(df_Accrual, column_order=InvoiceColumns())
+    st.markdown('---')
+    st.stop()
     df_sorted = df_Accrual.groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Requested Amount', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
@@ -302,7 +306,7 @@ def InvoiceAccruals(files):
                 st.markdown('---')
                 col1, col2, col3 = st.columns([1,1,6])
                 with col1:
-                    ardate = st.date_input('Event Month') #, value=df_['Event date'].iloc[-1].date())
+                    ardate = st.date_input('Active AR Month') #, value=df_['Event date'].iloc[-1].date())
                 st.markdown('---')
                 armonth = month_names[ardate.month]+'-'+str(ardate.year)
                 formdata = pd.DataFrame(

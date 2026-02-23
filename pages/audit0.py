@@ -184,30 +184,31 @@ def InvoiceColumns():
 def show_AR(df_, ardate, armonth, formdata):
     st.markdown('## AR')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    st.markdown('---')
-    st.write('Pending Payment')
+    # st.markdown('---')
+    # st.write('Pending Payment')
     df_Pending = df_[ 
         (df_['Event Month'] == armonth) &
         (df_['Payment Month'] != df_['Event Month'])
                      ]
-    st.dataframe(df_Pending, column_order=InvoiceColumns())
-    st.markdown('---')
+    # st.dataframe(df_Pending, column_order=InvoiceColumns())
+    # st.markdown('---')
 
-    st.markdown('---')
-    st.write('Payment On Prior Events')
+    # st.markdown('---')
+    # st.write('Payment On Prior Events')
     df_Prior = df_[ 
         (df_['Payment Month'] == armonth) &
         (df_['Event date'].dt.date < datefilter) &
         (df_['Payment Month'] != df_['Event Month'])
                      ]
-    st.dataframe(df_Prior, column_order=InvoiceColumns())
-    st.markdown('---')
-    st.stop()
-    df_Prior_sorted = df_Prior.groupby('Last Payment for Event Date').agg(
+    # st.dataframe(df_Prior, column_order=InvoiceColumns())
+    # st.markdown('---')
+    df_sorted = pd.concat([df_Prior, df_Pending], ignore_index=True)
+    df_sorted.reset_index(inplace=True)
+    df_sorted = df_sorted.groupby('Last Payment for Event Date').agg(
         AccrualTotal=('Requested Amount', 'sum')).reset_index()
     col1, col2 = st.columns([3,8])
     with col1:
-        selection = dataframe_with_selections(df_Prior_sorted, 'ar')
+        selection = dataframe_with_selections(df_sorted, 'ar')
     with col2:
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Last Payment for Event Date', how='inner')
@@ -215,17 +216,17 @@ def show_AR(df_, ardate, armonth, formdata):
         st.write(f" Total Selected: ${format(union_df['Requested Amount'].sum(),',')}")
     col1, col2 = st.columns([3,8])
     with col1:
-        st.write('Payment On')
+        st.write('Payment On Prior Events')
         val_PaymentOn = df_Prior['Requested Amount'].sum()
         st.write(f" Total Current: ${format(val_PaymentOn,',')}")
-    # with col2:
-    #     st.write('Pending Payment')
-    #     val_PendingPayment = df_Accrual[df_Accrual['Last Payment Date Processed'].dt.date >= datefilter]['Requested Amount'].sum()
-    #     st.write(f" Total Pending: ${format(val_PendingPayment,',')}")
+    with col2:
+        st.write('Pending Payment')
+        val_PendingPayment = df_Pending['Requested Amount'].sum()
+        st.write(f" Total Pending: ${format(val_PendingPayment,',')}")
     formdata['Debit'].iloc[4] = val_PaymentOn
     formdata['Credit'].iloc[3] = val_PaymentOn
-    # formdata['Debit'].iloc[15] = val_PendingPayment
-    # formdata['Credit'].iloc[16] = val_PendingPayment
+    formdata['Debit'].iloc[15] = val_PendingPayment
+    formdata['Credit'].iloc[16] = val_PendingPayment
 
 
 def show_FuturePE(df_, ardate, armonth, formdata):

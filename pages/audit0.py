@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime
 import re
+import io
 from datetime import timedelta
 from company import publish
 from company import servertipdata
@@ -52,6 +53,10 @@ def InvoiceColumns():
     return ['Invoice ID', 'Customer Name', 'Invoice Title', 'Status', 'Due Date', 'Last Payment Date', 'Payment Month', 'Amount Paid', 'Event date', 'Event Month', 'Inv Num']
 
 
+def GiftColumns():
+    return ['EventOccuredOn', 'Event', 'Value', 'PurchaserName', 'Recipient Name', 'Transaction Month']
+
+
 def string_list(data, before, after):
     if len(data)>0:
         val = ', '.join(data.sort_values().to_list())
@@ -60,20 +65,38 @@ def string_list(data, before, after):
     return ''
 
 
-def filter_RawData(df):
-    _df = df.copy()
-    col1, col2 = st.columns([8,2])
-    col2.write('Apply filters')
-    to_filter_columns = ('Event Year', 'Inv Num', 'Customer Name', 'Status', 'Payment Month', 'Event Month')#st.multiselect("Filter dataframe on", df.columns)
-    for column in to_filter_columns:
-        user_cat_input = col2.multiselect(
-            f"Filter on {column}",
-            _df[column].unique(),
-        )
-        if len(user_cat_input) > 0:
-            _df = _df[_df[column].isin(user_cat_input)]
-    Height = int(35.2 * (12 + 1))
-    col1.dataframe(_df, height=Height, hide_index=True, column_order=InvoiceColumns())
+def filter_RawData_GiftCard(df, nam):
+    with st.expander(nam):
+        _df = df.copy()
+        col1, col2 = st.columns([8,2])
+        col2.write('Apply filters')
+        to_filter_columns = ('Event Year', 'EventOccuredOn', 'Event', 'StaffName', 'PurchaserName', 'RecipientName') #st.multiselect("Filter dataframe on", df.columns)
+        for column in to_filter_columns:
+            user_cat_input = col2.multiselect(
+                f"Filter on {column}",
+                _df[column].unique(),
+            )
+            if len(user_cat_input) > 0:
+                _df = _df[_df[column].isin(user_cat_input)]
+        Height = int(35.2 * (12 + 1))
+        col1.dataframe(_df, height=Height, hide_index=True, column_order=GiftColumns())
+    
+
+def filter_RawData_Invoice(df, nam):
+    with st.expander(nam):
+        _df = df.copy()
+        col1, col2 = st.columns([8,2])
+        col2.write('Apply filters')
+        to_filter_columns = ('Event Year', 'Inv Num', 'Customer Name', 'Status', 'Payment Month', 'Event Month')#st.multiselect("Filter dataframe on", df.columns)
+        for column in to_filter_columns:
+            user_cat_input = col2.multiselect(
+                f"Filter on {column}",
+                _df[column].unique(),
+            )
+            if len(user_cat_input) > 0:
+                _df = _df[_df[column].isin(user_cat_input)]
+        Height = int(35.2 * (12 + 1))
+        col1.dataframe(_df, height=Height, hide_index=True, column_order=InvoiceColumns())
     
 
 def show_AR(df_, ardate, armonth, formdata):
@@ -123,10 +146,10 @@ def show_AR(df_, ardate, armonth, formdata):
     formdata['Credit'].iloc[3] = format(val_PaymentOn,'0.2f')
     formdata['Memo'].iloc[3] = string_list(df_Prior['Inv Num'],'payment on '+ armonth+ ' events (Inv #',')')
     formdata['Memo'].iloc[4] = formdata['Memo'].iloc[3]
-    formdata['Debit'].iloc[15] = format(val_PendingPayment,'0.2f')
-    formdata['Credit'].iloc[16] = format(val_PendingPayment,'0.2f')
-    formdata['Memo'].iloc[15] = string_list(df_Pending['Inv Num'],'Pending payment on '+ armonth+ ' events (Inv #',')')
-    formdata['Memo'].iloc[16] = formdata['Memo'].iloc[15]
+    formdata['Debit'].iloc[15+3] = format(val_PendingPayment,'0.2f')
+    formdata['Credit'].iloc[16+3] = format(val_PendingPayment,'0.2f')
+    formdata['Memo'].iloc[15+3] = string_list(df_Pending['Inv Num'],'Pending payment on '+ armonth+ ' events (Inv #',')')
+    formdata['Memo'].iloc[16+3] = formdata['Memo'].iloc[15+3]
 
 
 def show_FuturePE(df_, ardate, armonth, formdata):
@@ -150,10 +173,10 @@ def show_FuturePE(df_, ardate, armonth, formdata):
         st.write(f" Selected Paid: ${format(union_df['Amount Paid'].sum(),',.2f')}")
     val = df_Accrual['PaidTotal'].sum()
     st.markdown(f"##### Total Paid Future PE: ${format(val,',.2f')}")
-    formdata['Debit'].iloc[13] = format(val,'0.2f')
-    formdata['Credit'].iloc[12] = format(val,'0.2f')
-    formdata['Memo'].iloc[12] = 'Deposit for Future PE'
-    formdata['Memo'].iloc[13] = formdata['Memo'].iloc[12]
+    formdata['Debit'].iloc[13+3] = format(val,'0.2f')
+    formdata['Credit'].iloc[12+3] = format(val,'0.2f')
+    formdata['Memo'].iloc[12+3] = 'Deposit for Future PE'
+    formdata['Memo'].iloc[13+3] = formdata['Memo'].iloc[12+3]
 
 
 def show_EventCount(df_, ardate, armonth, formdata):
@@ -173,19 +196,54 @@ def show_EventCount(df_, ardate, armonth, formdata):
         # st.dataframe(df_Accrual, column_order=InvoiceColumns(), width=1200)
     val = deposit * len(selection)
     st.markdown(f"##### Total Deposits Paid: ${format(val,',.2f')}")
-    formdata['Debit'].iloc[9] = format(val,'0.2f')
-    formdata['Credit'].iloc[10] = format(val,'0.2f')
-    formdata['Memo'].iloc[9] = 'Deposits from ' + armonth + ' Events'
-    formdata['Memo'].iloc[10] = formdata['Memo'].iloc[9]
+    formdata['Debit'].iloc[9+3] = format(val,'0.2f')
+    formdata['Credit'].iloc[10+3] = format(val,'0.2f')
+    formdata['Memo'].iloc[9+3] = 'Deposits from ' + armonth + ' Events'
+    formdata['Memo'].iloc[10+3] = formdata['Memo'].iloc[9+3]
     
+
+def show_GiftCards(df_, ardate, armonth, formdata):
+    # 'eventoccuredon == ar month' & 'Event == OrderPlace'
+            # sum TotalRevenue'
+
+            # 'eventoccuredon == ar month' & 'Event == Redeemed'
+            # sum Value'
+    st.markdown('---')
+    st.markdown('## Gift Cards')
+    df_Placed = df_[ 
+        (df_['Transaction Month'] == armonth) &
+        (df_['Event'] == 'GiftCardCreated')
+                     ]
+    df_Used = df_[ 
+        (df_['Transaction Month'] == armonth) &
+        (df_['Event'] == 'Redeemed')
+                     ]
+    col1, col2, col3 = st.columns([4,2,4])
+    with col1:
+        st.write("Cards Purchased")
+        st.dataframe(df_Placed, column_order=GiftColumns(), use_container_width=True)
+        val_Placed = df_Placed['Value'].sum()
+        st.markdown(f"##### Total Cards Purchased: ${format(val_Placed,',.2f')}")
+    with col3:
+        st.write("Cards Redeemed")
+        st.dataframe(df_Used, column_order=GiftColumns(), use_container_width=True)
+        val_Used = df_Used['Value'].sum()
+        st.markdown(f"##### Total Redeemed: ${format(val_Used,',.2f')}")
+    formdata['Debit'].iloc[7] = format(val_Placed,'0.2f')
+    formdata['Credit'].iloc[6] = format(val_Placed,'0.2f')
+    formdata['Memo'].iloc[6] = armonth + ' GC Sales (SQ + gift up!)'
+    formdata['Memo'].iloc[7] = formdata['Memo'].iloc[6]
+    formdata['Credit'].iloc[7+3] = format(val_Used,'0.2f')
+    formdata['Debit'].iloc[6+3] = format(val_Used,'0.2f')
+    formdata['Memo'].iloc[6+3] = armonth + ' GC Redemptions (SQ + gift up!)'
+    formdata['Memo'].iloc[7+3] = formdata['Memo'].iloc[6+3]
+
 
 def show_ARForm(formdata, armonth):
     st.markdown('---')
     st.markdown('## AR Form for ' + armonth)
     formdata['Memo'].iloc[0] = 'Invoice ____forfeit'
     formdata['Memo'].iloc[1] = formdata['Memo'].iloc[0]
-    formdata['Memo'].iloc[6] = armonth + 'GC Sales (SQ + gift up!)'
-    formdata['Memo'].iloc[7] = formdata['Memo'].iloc[6]
     Height = int(35.2 * (len(formdata) + 1))
     st.dataframe(formdata, hide_index=True, width=800, height=Height)
 
@@ -193,12 +251,11 @@ def show_ARForm(formdata, armonth):
 def InvoiceAccruals(files):
     for file in files:
         try:
-            dataframe = pd.read_csv(file)
+            dataframe = pd.read_csv(io.StringIO(file.getvalue().decode("utf-8")))
         except Exception:
             dataframe = pd.read_excel(file)
         if 'Invoice Token' == dataframe.columns[0]:
             st.markdown('---')
-            st.markdown('### Invoice Accruals')
             df_invoice = dataframe.copy() 
             # st.write(df_invoice['Status'].unique())
             drop_list = ['Canceled', 'Refunded', 'Unpaid']
@@ -231,36 +288,34 @@ def InvoiceAccruals(files):
                 #     eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
                 # df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
                 # df_invoice.reset_index(drop=True, inplace=True)
-                st.write('Raw Data')
+                # st.write('Invoices Raw Data')
                 # filter_RawData(df_invoice)
                 # st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
                 df_invoice['Event Year'] = df_invoice['Event date'].dt.year.astype(str)
                 df_invoice['Last Payment for Event Date'] = df_invoice['Payment Month'] + ' for ' + df_invoice['Event Month']
-                filter_RawData(df_invoice)
-                st.markdown('---')
-                col1, col2, col3 = st.columns([1,1,6])
-                with col1:
-                    ardate = st.date_input('Active AR Month') #, value=df_['Event date'].iloc[-1].date())
-                st.markdown('---')
-                armonth = month_names[ardate.month]+'-'+str(ardate.year)
-                formdata = pd.DataFrame(
-                    {'Chart of Accounts': [
-                    '2. Prepaid Event Deposits', 'Classes & Prepaids', '', 
-                    'Accounts Receivable', 'MGF Events', '',
-                    'Unredeemed GCs liability', 'MGF Events', '',
-                    'Advance Deposits', 'MGF Events', '',
-                    'Advance Deposits', 'MGF Events', '',
-                    'Accounts Receivable', 'MGF Events'
-                    ],
-                        'Debit': [0, '', '', '', 0, '', 0, '', '', 0, '', '', '', 0, '', 0, ''], 
-                        'Credit': ['', 0, '', 0, '', '', '', 0, '', '', 0, '', 0, '', '', '', 0], 
-                        'Memo': ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']}
-                        )
-                show_AR(df_invoice, ardate, armonth, formdata)
-                show_FuturePE(df_invoice, ardate, armonth, formdata)
-                show_EventCount(df_invoice, ardate, armonth, formdata)
-                show_ARForm(formdata, armonth)
-    
+                filter_RawData_Invoice(df_invoice, 'Invoices Raw Data')
+                return df_invoice
+    return None
+
+
+def GiftCards(files):
+    for file in files:
+        try:
+            dataframe = pd.read_csv(io.StringIO(file.getvalue().decode("utf-8")))
+        except Exception:
+            dataframe = pd.read_excel(file)
+        if 'LoggedOn' == dataframe.columns[1]:
+            df_giftcards = dataframe.copy() 
+            # st.write(df_invoice['Status'].unique())
+            if 'EventOccuredOn' in df_giftcards.columns:
+                df_giftcards['Value'] = df_giftcards['Value'].abs()
+                df_giftcards = addMonthName(df_giftcards, 'EventOccuredOn', 'Transaction Month')
+                df_giftcards['Event Year'] = df_giftcards['EventOccuredOn'].dt.year.astype(str)
+                # filter_RawData_Invoice(df_invoice, 'Invoices Raw Data')
+                filter_RawData_GiftCard(df_giftcards, 'Gift Cards Data')
+                return df_giftcards
+    return None
+
 
 def run():
     if 'tipdata' not in st.session_state:
@@ -272,8 +327,37 @@ def run():
         st.caption('')
     loadedfile = None
     files = st.file_uploader('Upload Accrual Files', type=['csv', 'xlsx'], accept_multiple_files=True, key='accrualfileuploader')
+    formdata = pd.DataFrame(
+                    {'Chart of Accounts': [
+                    '2. Prepaid Event Deposits', 'Classes & Prepaids', '', 
+                    'Accounts Receivable', 'MGF Events', '',
+                    'Unredeemed GCs liability', 'MGF Events', '',
+                    'Unredeemed GCs liability', 'MGF Events', '',
+                    'Advance Deposits', 'MGF Events', '',
+                    'Advance Deposits', 'MGF Events', '',
+                    'Accounts Receivable', 'MGF Events'
+                    ],
+                        'Debit': ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''], 
+                        'Credit': ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''], 
+                        'Memo': ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']}
+                        )
+    st.markdown('---')
+    col1, col2, col3 = st.columns([2,1,6])
+    with col1:
+        ardate = st.date_input('Active AR Month') #, value=df_['Event date'].iloc[-1].date())
+    armonth = month_names[ardate.month]+'-'+str(ardate.year)
     if len(files) > 0:
-        InvoiceAccruals(files)
+        df_invoice = InvoiceAccruals(files)
+        df_giftcards = GiftCards(files)
+        st.markdown('---')
+        if df_invoice is not None:
+            # st.markdown('### Invoice Accruals')
+            show_AR(df_invoice, ardate, armonth, formdata)
+            show_FuturePE(df_invoice, ardate, armonth, formdata)
+            show_EventCount(df_invoice, ardate, armonth, formdata)
+        if df_giftcards is not None:
+            show_GiftCards(df_giftcards, ardate, armonth, formdata)
+        show_ARForm(formdata, armonth)
     else:
         st.markdown('---')
         st.markdown('''

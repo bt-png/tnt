@@ -184,7 +184,15 @@ def InvoiceColumns():
 def show_AR(df_, ardate, armonth, formdata):
     st.markdown('## AR')
     datefilter = datetime.date(ardate.year + ardate.month // 12, ardate.month % 12 + 1, 1)
-    
+    st.markdown('---')
+    st.write('Pending Payment')
+    df_Pending = df_[ 
+        (df_['Event Month'] == armonth) &
+        (df_['Payment Month'] != df_['Event Month'])
+                     ]
+    st.dataframe(df_Pending, column_order=InvoiceColumns())
+    st.markdown('---')
+    st.stop()
     st.markdown('---')
     st.write('Payment On Prior Events')
     df_Prior = df_[ 

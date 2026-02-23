@@ -186,7 +186,7 @@ def InvoiceAccruals(files):
         if 'Invoice Token' == dataframe.columns[0]:
             st.markdown('---')
             st.markdown('### Invoice Accruals')
-            st.write('Raw Data')
+            
             df_invoice = dataframe.copy()  
             if 'Amount Paid' in df_invoice.columns:
                 try:
@@ -196,10 +196,12 @@ def InvoiceAccruals(files):
                     df_invoice['Amount Paid'] = df_invoice['Amount Paid'].replace(np.nan, 0)
                 except Exception:
                     pass
-                # df_invoice['Amount Paid'] = df_invoice['Amount Paid'].apply(lambda x: f'${x:,.2f}')
                 df_invoice = addMonthName(df_invoice, 'Last Payment Date', 'Payment Month')
                 df_invoice = addMonthName(df_invoice, 'Event date', 'Event Month')
                 eventyear = st.number_input('Filter by Event Year', step=1, value=2025)
+                df_invoice = df_invoice[df_invoice['Event date'].dt.year.astype(str) == str(eventyear)]
+                st.write('Raw Data')
+                st.dataframe(df_invoice, column_order=InvoiceColumns(), width=1200)
                 df_inv_accr = df_invoice[(df_invoice['Payment Month'] != df_invoice['Event Month']) & (df_invoice['Event date'].dt.year.astype(str) == str(eventyear))]
                 df_inv_accr['grouping'] = df_inv_accr['Payment Month'] + ' for ' + df_inv_accr['Event Month']
                 st.write('Accrual Items')

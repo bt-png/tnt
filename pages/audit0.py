@@ -189,7 +189,7 @@ def show_AR(df_, ardate, armonth, formdata):
     st.write('Payment On Prior Events')
     df_Prior = df_[ 
         (df_['Payment Month'] == armonth) &
-        (df_['Last Payment Date Processed'].dt.date >= datefilter) &
+        (df_['Event date'].dt.date < datefilter) &
         (df_['Payment Month'] != df_['Event Month'])
                      ]
     st.dataframe(df_Prior, column_order=InvoiceColumns())

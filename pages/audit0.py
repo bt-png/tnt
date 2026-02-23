@@ -192,8 +192,6 @@ def show_AR(df_):
     # st.dataframe(df_['Event date'].dt.date, column_order=InvoiceColumns())
     df_Accrual = df_[df_['Event date'].dt.date < datefilter].groupby('grouping').agg(
         AccrualTotal=('Amount Paid', 'sum')).reset_index()
-    
-    
     col1, col2 = st.columns([3,8])
     with col1:
         selection = dataframe_with_selections(df_Accrual)
@@ -213,7 +211,10 @@ def InvoiceAccruals(files):
             st.markdown('---')
             st.markdown('### Invoice Accruals')
             
-            df_invoice = dataframe.copy()  
+            df_invoice = dataframe.copy() 
+            # st.write(df_invoice['Status'].unique())
+            drop_list = ['Canceled', 'Refunded', 'Unpaid']
+            df_invoice = df_invoice[~df_invoice['Status'].isin(drop_list)].reset_index(drop=True)
             if 'Amount Paid' in df_invoice.columns:
                 try:
                     df_invoice['Amount Paid'] = df_invoice['Amount Paid'].str.replace('$', '', regex=False)

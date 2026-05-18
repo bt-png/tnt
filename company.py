@@ -237,8 +237,8 @@ def updateOverridePositions(client):
 
 
 def updateChefEmployees(client):
-    st.write('Core Staff - Chef\'s')
-    st.caption('Default list for chef pool. User may add more.')
+    st.write('Core Staff')
+    st.caption('Default list for core salaried staff. User may add more.')
     clients = readClients()
     chefs = []
     if 'chefs' in clients[client]:
@@ -252,7 +252,7 @@ def updateChefEmployees(client):
         ).dropna()
     update = update['Employee Name'].to_list()
     if chefs != update:
-        if st.button('Update List of Chef\'s'):
+        if st.button('Update List of Core Staff'):
             firestore.clientUpdateDict(client, 'chefs', update)
             refresh()
 

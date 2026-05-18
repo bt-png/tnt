@@ -178,7 +178,7 @@ def TipsSum():
     df_reg = df[df['Pool'] == 'Regular']
     df_reg.drop(['Pool', 'Garden Tips'], axis=1, inplace=True)
     df_reg.rename(columns={'Regular': 'Regular Hours'}, inplace=True)
-    df_reg['Regular Tip Rate'] = [round(x/y,2) for x, y in zip(df_reg['Regular Tips'], df_reg['Regular Hours'])]
+    df_reg['Regular Tip Rate'] = [round(x/y,2) if y>0 else round(0,2) for x, y in zip(df_reg['Regular Tips'], df_reg['Regular Hours'])]
     df_garden = df[df['Pool'] == 'Garden']
     df_garden.drop(['Pool', 'Regular Tips'], axis=1, inplace=True)
     df_garden.rename(columns={'Regular': 'Garden Hours'}, inplace=True)

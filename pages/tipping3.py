@@ -287,7 +287,7 @@ def run():
                             dfhelper.drop(idx, inplace=True)
                     dfhelper = dfhelper.rename(columns={'Directed': 'Total Tips'})
                     dfhelper = dfhelper.loc[:, ['Employee Name', 'Total Tips']]
-                    dfchefpool = dfchefpool.loc[:, ['Employee Name', 'Total Tips']]
+                    dfchefpool = dfchefpool.loc[:, ['Employee Name', 'Total Tips', 'Shifts Worked']]
                     dfchefpool = pd.concat([dfchefpool, dfhelper])
                     # if dfchefpool['Directed'].min() != 0 or dfchefpool['Directed'].max() != 0:
                     #     order = ['Employee Name', 'Chef Tips', 'Directed', 'Shifts Worked']
@@ -296,10 +296,12 @@ def run():
                     altrows = dfchefpool['Employee Name'].iloc[1::2]
                     # dfchefpool.reset_index(inplace=True)
                     dfchefpool.set_index('Employee Name', inplace=True, drop=False)
+                    CoreTipsSum = dfchefpool['Total Tips'].sum()
                     dfchefpool.loc['Total'] = dfchefpool[['Total Tips']].sum()
+                    # dfchefpool.loc[dfchefpool.index[-1], 'Total Tips'] = CoreTipsSum
+                    dfchefpool['Core Tips %'] = [100 * (tip / CoreTipsSum) for tip in dfchefpool['Total Tips']]
                     dfchefpool.loc[dfchefpool.index[-1], 'Employee Name'] = 'Core Staff SubTotal'
-                    dfchefpool = dfchefpool.style.format('${:.2f}', subset=['Total Tips'])
-                    # dfchefpool = dfchefpool.format('{:0.0f}', subset=['Shifts Worked'])
+                    dfchefpool = dfchefpool.style.format({'Total Tips': '${:.2f}', 'Shifts Worked': '{:.0f}', 'Core Tips %': '{:.0f}%'})
                     dfchefpool = dfchefpool.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     dfchefpool = dfchefpool.set_properties(subset=pd.IndexSlice[['Total'], :], **{'background-color' : 'lightsteelblue'})
                     st.dataframe(dfchefpool, hide_index=True)

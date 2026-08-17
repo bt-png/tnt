@@ -281,6 +281,15 @@ def tipPercentsSummary():
     tipPercents()
     tipPoolSumHRS()
     tipDisplaySummary()
+    percents = []
+    percents.append(st.session_state['tipdata']['tippool_g1'])
+    percents.append(st.session_state['tipdata']['tippool_g2'])
+    percents.append(100 - st.session_state['tipdata']['tippool_g1'] - st.session_state['tipdata']['tippool_g2'])
+    percents.append(st.session_state['tipdata']['tippool_f1'])
+    percents.append(st.session_state['tipdata']['tippool_f2'])
+    percents.append(100 - st.session_state['tipdata']['tippool_f1'] - st.session_state['tipdata']['tippool_f2'])
+    dictionary = dict(zip(tippools(), percents))
+    st.session_state['tipdata']['tippoolpercents'] = dictionary
     if rerun:
         st.rerun()
     if st.session_state['updatedsomething']:

@@ -301,7 +301,8 @@ def run():
                     # dfchefpool.loc[dfchefpool.index[-1], 'Total Tips'] = CoreTipsSum
                     dfchefpool['Core Tips %'] = [100 * (tip / CoreTipsSum) for tip in dfchefpool['Total Tips']]
                     dfchefpool.loc[dfchefpool.index[-1], 'Employee Name'] = 'Core Staff SubTotal'
-                    dfchefpool = dfchefpool.style.format({'Total Tips': '${:.2f}', 'Shifts Worked': '{:.0f}', 'Core Tips %': '{:.0f}%'})
+                    dfchefpool = dfchefpool.rename(columns={'Shifts Worked': 'Shifts'})
+                    dfchefpool = dfchefpool.style.format({'Total Tips': '${:.2f}', 'Shifts': '{:.0f}', 'Core Tips %': '{:.0f}%'})
                     dfchefpool = dfchefpool.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     dfchefpool = dfchefpool.set_properties(subset=pd.IndexSlice[['Total'], :], **{'background-color' : 'lightsteelblue'})
                     st.dataframe(dfchefpool, hide_index=True)
@@ -332,9 +333,11 @@ def run():
                 col3, col4 = st.columns([4, 3])
                 with col3:
                     st.markdown('#### Hourly Rates')
+                    #st.write(st.session_state['tipdata'])
                     breakouts = pd.DataFrame({
-                        # 'Total': st.session_state['tipdata']['tippooltotals'],
-                        'Rate/hr': st.session_state['tipdata']['tippoolhourlyrates']
+                        #'Total': st.session_state['tipdata']['tippooltotals'],
+                        'Rate/hr': st.session_state['tipdata']['tippoolhourlyrates'],
+                        'Percent': st.session_state['tipdata']['tippoolpercents']
                         })
                     # breakouts['% of Total'] = [round(100 * x / breakouts['Total'].sum(),0) for x in breakouts['Total']]
                     breakouts = breakouts.loc[~(breakouts==0).all(axis=1)]
@@ -344,10 +347,7 @@ def run():
                     # breakouts.reset_index(inplace=True)
                     # breakouts.loc['Total'] = breakouts[['Total', '% of Total']].sum()
                     # breakouts.loc[breakouts.index[-1], 'Name'] = 'Total'
-                    breakouts = breakouts.style.format(
-                        '${:.2f}', subset=['Rate/hr']
-                        )  # .format('{:.0f}%', subset=['% of Total'])
-                    
+                    breakouts = breakouts.style.format({'Rate/hr': '${:.2f}','Percent': '{:.0f}%'})
                     breakouts = breakouts.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     st.dataframe(breakouts, hide_index=True)
                 with col4:                

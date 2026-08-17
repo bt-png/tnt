@@ -280,7 +280,7 @@ def run():
                 dfemployeetips = TipChangeSummary()
                 notes = st.text_area(
                     'Staff Notes', height=int(35.2 * (6)), 
-                    value=st.session_state['tipdata'].get('Tipping Notes', ''),
+                    value=st.session_state['tipdata'].get('Tipping Notes', 'Back of house is tipped at 50% hours worked due to split shifts on the farm.'),
                     key='tippingnotes',
                     on_change=syncInput, args=('tippingnotes', 'Tipping Notes')
                     )

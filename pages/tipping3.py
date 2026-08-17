@@ -285,10 +285,10 @@ def run():
                     on_change=syncInput, args=('tippingnotes', 'Tipping Notes')
                     )
             with col2:
-                st.markdown('#### Core Staff')
+                st.markdown(f"#### Core Staff - {int(st.session_state['tipdata'].get('Chef Percent', 18))}%")
+                #st.markdown('#### Core Staff')
                 col3, col4 = st.columns([.4, .6])
                 with col3:
-                    # st.markdown(f"#### Chef Pool - {int(st.session_state['tipdata'].get('Chef Percent', 18))}%")
                     dfchefpool = chefPooldf()
                     commissioned = clientGetValue(st.session_state['company'], 'commission')
                     dfhelper = st.session_state['tipdata']['Helper Pool Employees'].copy()

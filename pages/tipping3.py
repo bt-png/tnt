@@ -42,15 +42,21 @@ def PayrollSummary():
         dftips.replace(np.nan, 0, inplace=True)
         dftips['Total Tips'] = [A - B for A, B in zip(dftips['Total Tips'], dftips['Prepaid Tips'])]
         dftips = dftips.loc[:, ['Employee Name', 'Total Tips']]
-    dftips.replace(0, np.nan, inplace=True)
-    dftips.dropna(axis=0, inplace=True)
+    dftips = dftips.replace(0, np.nan)
+    #dftips.dropna(axis=0, inplace=True)
     dftips.set_index('Employee Name', inplace=True, drop=False)
     altrows = dftips['Employee Name'].iloc[1::2]
-    dftips.loc['Payroll Tip Total'] = dftips['Total Tips'].sum()
+    dftips.loc['Payroll Tip Total'] = dftips[[]].sum()
+    dftips.loc[dftips.index[-1], 'Regular'] = dftips['Regular'].sum()
+    dftips.loc[dftips.index[-1], 'Garden Tips'] = dftips['Garden Tips'].sum()
+    dftips.loc[dftips.index[-1], 'Regular Tips'] = dftips['Regular Tips'].sum()
+    dftips.loc[dftips.index[-1], 'House Tip'] = dftips['House Tip'].sum()
+    dftips.loc[dftips.index[-1], 'Directed Tips'] = dftips['Directed Tips'].sum()
+    dftips.loc[dftips.index[-1], 'Total Tips'] = dftips['Total Tips'].sum()
     dftips.loc[dftips.index[-1], 'Employee Name'] = 'Payroll Tip Total'
     Height = int(35.2 * (len(dftips) + 1))
     dftips.index.name = None
-    dftips = dftips.style.format('${:.2f}', subset=['Total Tips'])
+    dftips = dftips.style.format({'Total Tips': '${:.2f}', 'Regular': '{:.2f}', 'Garden Tips': '${:.2f}', 'Regular Tips': '${:.2f}', 'House Tip': '${:.2f}', 'Directed Tips': '${:.2f}'})
     dftips = dftips.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
     dftips = dftips.set_properties(subset = pd.IndexSlice[['Payroll Tip Total'], :], **{'background-color' : 'lightsteelblue'})
     config = {
@@ -347,28 +353,10 @@ def run():
                     # breakouts.reset_index(inplace=True)
                     # breakouts.loc['Total'] = breakouts[['Total', '% of Total']].sum()
                     # breakouts.loc[breakouts.index[-1], 'Name'] = 'Total'
-                    breakouts = breakouts.style.format({'Rate/hr': '${:.2f}','Percent': '{:.0f}%'})
+                    breakouts = breakouts.rename(columns={'Percent': '% of Pool'})
+                    breakouts = breakouts.style.format({'Rate/hr': '${:.2f}','% of Pool': '{:.0f}%'})
                     breakouts = breakouts.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     st.dataframe(breakouts, hide_index=True)
-                with col4:                
-                    st.markdown('#### Pool Split')
-                    cuts = pd.DataFrame(st.session_state['tipdata']['tippool'], index=['Total']).transpose()
-                    cuts['% of Total'] = [round(100 * x / cuts['Total'].sum(), 0) for x in cuts['Total']]
-                    cuts = cuts.loc[~(cuts==0).all(axis=1)]
-                    cuts.index.name = 'Pools'
-                    cuts.reset_index(drop=False, inplace=True)
-                    cuts.set_index('Pools', inplace=True, drop=False)
-                    altrows = cuts['Pools'].iloc[1::2]
-                    cuts.loc['Total'] = cuts[['Total']].sum()
-                    cuts.loc[cuts.index[-1], 'Pools'] = 'Total'
-                    # cuts.loc[cuts.index[-1], 'Total'] = 'Total'
-                    cuts = cuts.style.format(
-                        '${:.2f}', subset=['Total']
-                        ).format('{:.0f}%', subset=['% of Total'])
-                    
-                    cuts = cuts.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightsteelblue'})
-                    cuts = cuts.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
-                    st.dataframe(cuts, hide_index=True)
             notes = st.text_area(
                 'Notes', height=int(35.2 * (5)), 
                 value=st.session_state['tipdata'].get('Tipping Notes', ''),
@@ -378,8 +366,29 @@ def run():
             st.markdown('---')
             # st.markdown('#### Position Tip Pool Eligibility Breakout')
             # dfbyposition = ByPosition()
-            st.markdown('#### Position Tip Summary')
-            TipsSum()
+            col1, col2 = st.columns([6, 4])
+            with col1:
+                st.markdown('#### Position Tip Summary')
+                TipsSum()
+            with col2:                
+                st.markdown('#### Pool Split')
+                cuts = pd.DataFrame(st.session_state['tipdata']['tippool'], index=['Total']).transpose()
+                cuts['% of Total'] = [round(100 * x / cuts['Total'].sum(), 0) for x in cuts['Total']]
+                cuts = cuts.loc[~(cuts==0).all(axis=1)]
+                cuts.index.name = 'Pools'
+                cuts.reset_index(drop=False, inplace=True)
+                cuts.set_index('Pools', inplace=True, drop=False)
+                altrows = cuts['Pools'].iloc[1::2]
+                cuts.loc['Total'] = cuts[['Total']].sum()
+                cuts.loc[cuts.index[-1], 'Pools'] = 'Total'
+                # cuts.loc[cuts.index[-1], 'Total'] = 'Total'
+                cuts.loc['Chefs', 'Pools'] = 'Core'
+                cuts = cuts.style.format(
+                    '${:.2f}', subset=['Total']
+                    ).format('{:.0f}%', subset=['% of Total'])
+                cuts = cuts.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightsteelblue'})
+                cuts = cuts.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
+                st.dataframe(cuts, hide_index=True)
             st.markdown('---')
             st.markdown('#### Revisions to Work Positions')
             df = pd.DataFrame.empty

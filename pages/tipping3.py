@@ -274,8 +274,6 @@ def run():
         else:
             st.markdown('---')
             st.markdown('### Owner Summary')
-            st.markdown('#### Payroll Summary')
-            PayrollSummary()
             col1, col2 = st.columns([5.25, 6])
             with col1:
                 st.markdown('#### Staff Summary')
@@ -357,12 +355,21 @@ def run():
                     breakouts = breakouts.style.format({'Rate/hr': '${:.2f}','% of Pool': '{:.0f}%'})
                     breakouts = breakouts.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     st.dataframe(breakouts, hide_index=True)
+                with col4:
+                    tipnotes = st.text_area(
+                        'Tip Source Notes', height=int(35.2 * (6)), 
+                        value=st.session_state['tipdata'].get('Tipping Notes2', ''),
+                        key='tippingnotes2',
+                        on_change=syncInput, args=('tippingnotes2', 'Tipping Notes2')
+                        )
             notes = st.text_area(
-                'Notes', height=int(35.2 * (5)), 
+                'Notes', height=int(35.2 * (3)), 
                 value=st.session_state['tipdata'].get('Tipping Notes', ''),
                 key='tippingnotes',
                 on_change=syncInput, args=('tippingnotes', 'Tipping Notes')
                 )
+            st.markdown('#### Payroll Summary')
+            PayrollSummary()
             st.markdown('---')
             # st.markdown('#### Position Tip Pool Eligibility Breakout')
             # dfbyposition = ByPosition()

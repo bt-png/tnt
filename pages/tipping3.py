@@ -274,15 +274,21 @@ def run():
         else:
             st.markdown('---')
             st.markdown('### Owner Summary')
-            col1, col2 = st.columns([5.25, 6])
+            col1, col2 = st.columns([3, 6])
             with col1:
                 st.markdown('#### Staff Summary')
                 dfemployeetips = TipChangeSummary()
+                notes = st.text_area(
+                    'Notes', height=int(35.2 * (6)), 
+                    value=st.session_state['tipdata'].get('Tipping Notes', ''),
+                    key='tippingnotes',
+                    on_change=syncInput, args=('tippingnotes', 'Tipping Notes')
+                    )
             with col2:
-                col3, col4 = st.columns([4, 3])
+                st.markdown('#### Core Staff')
+                col3, col4 = st.columns([.4, .6])
                 with col3:
                     # st.markdown(f"#### Chef Pool - {int(st.session_state['tipdata'].get('Chef Percent', 18))}%")
-                    st.markdown('#### Core Staff')
                     dfchefpool = chefPooldf()
                     commissioned = clientGetValue(st.session_state['company'], 'commission')
                     dfhelper = st.session_state['tipdata']['Helper Pool Employees'].copy()
@@ -311,7 +317,15 @@ def run():
                     dfchefpool = dfchefpool.set_properties(subset=pd.IndexSlice[['Total'], :], **{'background-color' : 'lightsteelblue'})
                     st.dataframe(dfchefpool, hide_index=True)
                 with col4:
-                    st.markdown('#### Tip Sources')
+                    corenotes = st.text_area(
+                        'Core Staff Notes', height=int(35.2 * (6)), 
+                        value=st.session_state['tipdata'].get('Tipping Notes3', ''),
+                        key='tippingnotes3',
+                        on_change=syncInput, args=('tippingnotes3', 'Tipping Notes3')
+                        )
+                st.markdown('#### Tip Sources')
+                col3, col4 = st.columns([.4, .6])
+                with col3:
                     src = pd.DataFrame({
                         'Name': ['Square Regular Events', 'Regular Days (+/-)', 'Square Large Events', 'Large Events (+/-)'],
                         'Total': [
@@ -334,9 +348,16 @@ def run():
                     src = src.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     src = src.set_properties(subset = pd.IndexSlice[['Total'], :], **{'background-color' : 'lightsteelblue'})
                     st.dataframe(src, hide_index=True)
-                col3, col4 = st.columns([4, 3])
+                with col4:
+                    srcnotes = st.text_area(
+                        'Tip Source Notes', height=int(35.2 * (6)), 
+                        value=st.session_state['tipdata'].get('Tipping Notes2', ''),
+                        key='tippingnotes2',
+                        on_change=syncInput, args=('tippingnotes2', 'Tipping Notes2')
+                        )
+                st.markdown('#### Hourly Rates')
+                col3, col4 = st.columns([.4, .6])
                 with col3:
-                    st.markdown('#### Hourly Rates')
                     #st.write(st.session_state['tipdata'])
                     breakouts = pd.DataFrame({
                         #'Total': st.session_state['tipdata']['tippooltotals'],
@@ -356,18 +377,13 @@ def run():
                     breakouts = breakouts.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
                     st.dataframe(breakouts, hide_index=True)
                 with col4:
-                    tipnotes = st.text_area(
-                        'Tip Source Notes', height=int(35.2 * (6)), 
-                        value=st.session_state['tipdata'].get('Tipping Notes2', ''),
-                        key='tippingnotes2',
-                        on_change=syncInput, args=('tippingnotes2', 'Tipping Notes2')
+                    ratesnotes = st.text_area(
+                        'Rates Notes', height=int(35.2 * (6)), 
+                        value=st.session_state['tipdata'].get('Tipping Notes4', ''),
+                        key='tippingnotes4',
+                        on_change=syncInput, args=('tippingnotes4', 'Tipping Notes4')
                         )
-            notes = st.text_area(
-                'Notes', height=int(35.2 * (3)), 
-                value=st.session_state['tipdata'].get('Tipping Notes', ''),
-                key='tippingnotes',
-                on_change=syncInput, args=('tippingnotes', 'Tipping Notes')
-                )
+            
             st.markdown('#### Payroll Summary')
             PayrollSummary()
             st.markdown('---')

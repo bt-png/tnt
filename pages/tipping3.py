@@ -279,7 +279,7 @@ def run():
                 st.markdown('#### Staff Summary')
                 dfemployeetips = TipChangeSummary()
                 notes = st.text_area(
-                    'Notes', height=int(35.2 * (6)), 
+                    'Staff Notes', height=int(35.2 * (6)), 
                     value=st.session_state['tipdata'].get('Tipping Notes', ''),
                     key='tippingnotes',
                     on_change=syncInput, args=('tippingnotes', 'Tipping Notes')

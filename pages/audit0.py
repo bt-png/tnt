@@ -346,6 +346,7 @@ def run():
     with col1:
         ardate = st.date_input('Active AR Month') #, value=df_['Event date'].iloc[-1].date())
     armonth = month_names[ardate.month]+'-'+str(ardate.year)
+    st.write('DEBUG:' & len(Files))
     if len(files) > 0:
         df_invoice = InvoiceAccruals(files)
         df_giftcards = GiftCards(files)

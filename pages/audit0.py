@@ -346,7 +346,6 @@ def run():
     with col1:
         ardate = st.date_input('Active AR Month') #, value=df_['Event date'].iloc[-1].date())
     armonth = month_names[ardate.month]+'-'+str(ardate.year)
-    st.write('DEBUG:' & len(Files))
     if len(files) > 0:
         df_invoice = InvoiceAccruals(files)
         df_giftcards = GiftCards(files)
@@ -359,24 +358,24 @@ def run():
         if df_giftcards is not None:
             show_GiftCards(df_giftcards, ardate, armonth, formdata)
         show_ARForm(formdata, armonth)
-    else:
-        st.markdown('---')
-        st.markdown('''
-                    ### Instructions: 
-                    #### Import Files:  
-                    ''')
-                    # **from When I Work** 
-                    # 1. Timesheets for pay period (staff hours)  
-                    # 2. Scheduler for pay period (chef shifts)   
+    
+    st.markdown('---')
+    st.markdown('''
+                ### Instructions: 
+                #### Import Files:  
+                ''')
+                # **from When I Work** 
+                # 1. Timesheets for pay period (staff hours)  
+                # 2. Scheduler for pay period (chef shifts)   
 
-                    # **from Square Reports**  
-                    # 3. Sales summary (broken daily) for time period  
+                # **from Square Reports**  
+                # 3. Sales summary (broken daily) for time period  
 
-                    # #### Reminders:
-                    # - Once those are loaded - you can complete steps A-C using the 
-                    # [SOP](https://docs.google.com/document/d/15JG3qYbkNIFvSfBfSI-DMCrhkaO6uVV92cw2xg55URo/edit?usp=sharing).  
-                    # - You can publish your work to update tables, please do so before moving to new step.
-                    # ''')
+                # #### Reminders:
+                # - Once those are loaded - you can complete steps A-C using the 
+                # [SOP](https://docs.google.com/document/d/15JG3qYbkNIFvSfBfSI-DMCrhkaO6uVV92cw2xg55URo/edit?usp=sharing).  
+                # - You can publish your work to update tables, please do so before moving to new step.
+                # ''')
 
 
 if __name__ == '__main__':

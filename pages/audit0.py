@@ -361,20 +361,15 @@ def run():
     else:
         st.markdown('---')
         st.markdown('''
-                    ### Instructions: 
-                    #### Import Files:  
-                    **from When I Work** 
-                    1. Timesheets for pay period (staff hours)  
-                    2. Scheduler for pay period (chef shifts)   
-    
-                    **from Square Reports**  
-                    3. Sales summary (broken daily) for time period  
-    
-                    #### Reminders:
-                    - Once those are loaded - you can complete steps A-C using the 
-                    [SOP](https://docs.google.com/document/d/15JG3qYbkNIFvSfBfSI-DMCrhkaO6uVV92cw2xg55URo/edit?usp=sharing).  
-                    - You can publish your work to update tables, please do so before moving to new step.
-                    ''')
+                        ### Instructions: 
+                        #### Import Files:  
+                        1. square > Invoices > Export  
+                            Add filter > By Event Date > final payments = $500  
+                            Add line to A/R sheet for pending payment  
+        
+                        #### Reminders:
+                        - None at the moment
+                        ''')
 
 
 if __name__ == '__main__':

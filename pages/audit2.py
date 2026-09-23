@@ -182,12 +182,12 @@ def run():
                     ### Instructions: 
                     #### Import Files:  
                     **from Quickbooks Online** 
-                    1. View the balance sheet > sales liability account > choose date range
+                    1. View the balance sheet > deposit liability account > choose date range
                     2. Export as excel (xlsx)
                     3. Clean data to show only headers and transactions
     
                     #### Reminders:
-                    - None at the moment
+                    - Resolve each of the four steps, one at a time
                     ''')
 
 

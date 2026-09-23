@@ -13,7 +13,7 @@ from sync import syncDataEditor
 
 
 def FullColumns():
-    return ['Transaction date', 'Memo/Description', 'Amount']
+    return ['Num', 'Description', 'Amount']
 
 
 def dataframe_with_selections(df):
@@ -35,24 +35,30 @@ def dataframe_with_selections(df):
 
 def loadfile(files):
     try:
-        dataframe = pd.read_csv(files)
-    except Exception:
-        dataframe = pd.read_excel(files)
-    if 'Sales' in dataframe[dataframe.columns[0]][4]:
-        dataframe.drop(labels=[0, 1, 2], axis=0, inplace=True)
-        dataframe.drop(labels=dataframe.columns[0], axis=1, inplace=True)
-        dataframe.columns = dataframe.iloc[0]
-        dataframe.reset_index(drop=True, inplace=True)
+        try:
+            dataframe = pd.read_csv(files)
+        except Exception:
+            dataframe = pd.read_excel(files)
+    # try:
+    # if 'Sales' in dataframe[dataframe.columns[0]][4]:
+        # dataframe.drop(labels=[0, 1, 2], axis=0, inplace=True)
+        # dataframe.drop(labels=dataframe.columns[0], axis=1, inplace=True)
+        # dataframe.columns = dataframe.iloc[0]
+        # dataframe.reset_index(drop=True, inplace=True)
+        
         # dataframe.drop(labels=[5], axis=0, inplace=True)
-        column_to_check = dataframe.columns[0]
-        value_to_find = 'TOTAL'
-        if column_to_check in dataframe.columns:
-            total_row_index = dataframe[dataframe[column_to_check].astype(str).str.contains(value_to_find, case=False, na=False)].index
-            if not total_row_index.empty:
-                first_total_idx = total_row_index[0]
-                dataframe = dataframe.loc[3:first_total_idx - 2]# dataframe = dataframe.loc[3:]
-        dataframe.reset_index(drop=True, inplace=True)
-    else:
+        # column_to_check = dataframe.columns[0]
+        # value_to_find = 'TOTAL'
+        # if column_to_check in dataframe.columns:
+        #     total_row_index = dataframe[dataframe[column_to_check].astype(str).str.contains(value_to_find, case=False, na=False)].index
+        #     if not total_row_index.empty:
+        #         first_total_idx = total_row_index[0]
+        #         dataframe = dataframe.loc[3:first_total_idx - 2]# dataframe = dataframe.loc[3:]
+        # dataframe.reset_index(drop=True, inplace=True)
+        # st.markdown('---')
+        # st.markdown('### RawData')
+        # st.write(dataframe)
+    except Exception:
         dataframe = None
     return dataframe
 
@@ -72,18 +78,18 @@ def addMonthName(df_):
 
 def addFromTo(df_):
     df_['FROM'] = \
-        df_['Memo/Description'].astype(str).str.split('for', n=1, expand=True)[0].str.strip()
+        df_['Description'].astype(str).str.split('for', n=1, expand=True)[0].str.strip()
     df_['FROM'] = \
         df_['FROM'].astype(str).str.split(' ', n=1, expand=True)[0].str.strip()
     df_['TO'] = \
-            df_['Memo/Description'].astype(str).str.split('for', n=1, expand=True)[1].str.strip()
+            df_['Description'].astype(str).str.split('for', n=1, expand=True)[1].str.strip()
     df_['TO'] = \
         df_['TO'].astype(str).str.split(' ', n=1, expand=True)[0].str.strip()
     return df_
 
 
 def adjustMemo(df_):
-    df_['Clean Memo'] = df_['Memo/Description'].astype(str).str.strip()
+    df_['Clean Memo'] = df_['Description'].astype(str).str.strip()
     pattern = r'(\d+)'
     df_['Extr Num'] = df_['Clean Memo'].astype(str).str.extract(pattern, expand=False)
     condition = df_['Extr Num'].notna()
@@ -105,7 +111,7 @@ def show_groupNetJE(df_):
     with col2:
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Clean Memo', how='inner')
-        st.dataframe(union_df, column_order=FullColumns(), width=1200)
+        st.dataframe(union_df, column_order=FullColumns(), width=800)
 
 
 def show_firstJE(df_):
@@ -170,7 +176,12 @@ def run():
         df = adjustMemo(df)
         df = addFromTo(df)
         # Modified
-        st.dataframe(df)
+        dft = df.reset_index(inplace=False, drop=False)
+        altrows = dft['index'].iloc[1::2]
+        dft = dft.drop(columns=['index'])
+        dft = dft.style.format('${:.2f}', subset=['Amount'])
+        dft = dft.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
+        st.dataframe(dft,hide_index=True)
         st.markdown('### Net non Zero')
         show_groupNetJE(df)
         col1, cola, col2 = st.columns([6,0.1,6])
@@ -185,7 +196,19 @@ def run():
         #     if publishbutton.button('Publish Data', key='fromaudit1'):
         #         publish()
     else:
-        st.write('You must first upload Sales Audit data')
+        st.markdown('---')
+        st.markdown('You must first upload Sales Audit data')
+        st.markdown('''
+                    ### Instructions: 
+                    #### Import Files:  
+                    **from Quickbooks Online** 
+                    1. View the balance sheet > sales liability account > choose date range
+                    2. Export as excel (xlsx)
+                    3. Clean data to show only headers and transactions
+    
+                    #### Reminders:
+                    - None at the moment
+                    ''')
 
 
 if __name__ == '__main__':

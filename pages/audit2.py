@@ -13,7 +13,7 @@ from sync import syncDataEditor
 
 
 def FullColumns():
-    return ['Transaction date', 'Memo/Description', 'Amount']
+    return ['Transaction date', 'Description', 'Amount']
 
 
 def dataframe_with_selections(df):
@@ -35,24 +35,25 @@ def dataframe_with_selections(df):
 
 def loadfile(files):
     try:
-        dataframe = pd.read_csv(files)
+        try:
+            dataframe = pd.read_csv(files)
+        except Exception:
+            dataframe = pd.read_excel(files)
+    # if 'Deposits' in dataframe[dataframe.columns[0]][4]:
+        # dataframe.drop(labels=[0, 1, 2], axis=0, inplace=True)
+        # dataframe.drop(labels=dataframe.columns[0], axis=1, inplace=True)
+        # dataframe.columns = dataframe.iloc[0]
+        # dataframe.reset_index(drop=True, inplace=True)
+        # # dataframe.drop(labels=[5], axis=0, inplace=True)
+        # column_to_check = dataframe.columns[0]
+        # value_to_find = 'TOTAL'
+        # if column_to_check in dataframe.columns:
+        #     total_row_index = dataframe[dataframe[column_to_check].astype(str).str.contains(value_to_find, case=False, na=False)].index
+        #     if not total_row_index.empty:
+        #         first_total_idx = total_row_index[0]
+        #         dataframe = dataframe.loc[3:first_total_idx - 2]# dataframe = dataframe.loc[3:]
+        dataframe.reset_index(drop=True, inplace=True)
     except Exception:
-        dataframe = pd.read_excel(files)
-    if 'Deposits' in dataframe[dataframe.columns[0]][4]:
-        dataframe.drop(labels=[0, 1, 2], axis=0, inplace=True)
-        dataframe.drop(labels=dataframe.columns[0], axis=1, inplace=True)
-        dataframe.columns = dataframe.iloc[0]
-        dataframe.reset_index(drop=True, inplace=True)
-        # dataframe.drop(labels=[5], axis=0, inplace=True)
-        column_to_check = dataframe.columns[0]
-        value_to_find = 'TOTAL'
-        if column_to_check in dataframe.columns:
-            total_row_index = dataframe[dataframe[column_to_check].astype(str).str.contains(value_to_find, case=False, na=False)].index
-            if not total_row_index.empty:
-                first_total_idx = total_row_index[0]
-                dataframe = dataframe.loc[3:first_total_idx - 2]# dataframe = dataframe.loc[3:]
-        dataframe.reset_index(drop=True, inplace=True)
-    else:
         dataframe = None
     return dataframe
 
@@ -71,7 +72,7 @@ def addMonthName(df_):
 
 
 def adjustMemo(df_):
-    df_['Clean Memo'] = df_['Memo/Description'].astype(str).str.strip()
+    df_['Clean Memo'] = df_['Description'].astype(str).str.strip()
     pattern = r'(\d+)'
     df_['Extr Num'] = df_['Clean Memo'].astype(str).str.extract(pattern, expand=False)
     condition = df_['Extr Num'].notna()
@@ -93,7 +94,12 @@ def show_groupNetJE(df_):
     with col2:
         st.write("Your selection:")
         union_df = pd.merge(selection, df_, on='Clean Memo', how='inner')
-        st.dataframe(union_df, column_order=FullColumns(), width=1200)
+        union_df = union_df.reset_index(inplace=False, drop=False)
+        altrows = union_df['index'].iloc[1::2]
+        union_df = union_df.drop(columns=['index'])
+        union_df = union_df.style.format('${:.2f}', subset=['Amount'])
+        union_df = union_df.set_properties(subset = pd.IndexSlice[altrows, :], **{'background-color': '#E3EFF8'})
+        st.dataframe(union_df, hide_index=True, column_order=FullColumns(), width=800)
 
 
 def show_singleJE(df_):
@@ -115,7 +121,7 @@ def show_firstJE(df_):
     first_rows = filtered_df.drop_duplicates(subset='Clean Memo', keep='first')
     
     st.dataframe(first_rows[first_rows['Amount'] < 0],
-                 column_order=['Transaction date', 'Memo/Description', 'Amount'], width=800)
+                 column_order=['Transaction date', 'Description', 'Amount'], width=800)
 
 
 # Invoice numbers can be string of 4 consecutive numbers (1806 or #001806 both should resolve to 1806)
@@ -171,6 +177,18 @@ def run():
         #         publish()
     else:
         st.write('You must first upload Deposit Audit data')
+        st.markdown('---')
+        st.markdown('''
+                    ### Instructions: 
+                    #### Import Files:  
+                    **from Quickbooks Online** 
+                    1. View the balance sheet > sales liability account > choose date range
+                    2. Export as excel (xlsx)
+                    3. Clean data to show only headers and transactions
+    
+                    #### Reminders:
+                    - None at the moment
+                    ''')
 
 
 if __name__ == '__main__':
